@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { createAuthMiddleware } from '../../server/authApi.ts';
 
-type VercelRequest = IncomingMessage & { url?: string; method?: string };
+type VercelRequest = IncomingMessage & { url?: string; method?: string; body?: unknown };
 
 export default async function handler(request: VercelRequest, response: ServerResponse) {
   const middleware = createAuthMiddleware(process.env);

@@ -4,6 +4,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
 
 type AuthEnvironment = Record<string, string | undefined>;
+type AuthRequest = IncomingMessage & { url?: string; body?: unknown };
 type Next = (error?: Error) => void;
 
 const ROLE_DETAILS = {
@@ -116,7 +117,21 @@ async function writeInitiatives(initiatives: StoredInitiative[]): Promise<void> 
   await rename(temporaryFile, file);
 }
 
-function readJson(request: IncomingMessage): Promise<Record<string, unknown>> {
+function readJson(request: AuthRequest): Promise<Record<string, unknown>> {
+  // Vercel's Node runtime parses JSON into request.body before invoking the
+  // function. Local Vite middleware still needs to read the incoming stream.
+  if (request.body && typeof request.body === 'object' && !Array.isArray(request.body)) {
+    return Promise.resolve(request.body as Record<string, unknown>);
+  }
+  if (typeof request.body === 'string') {
+    try {
+      const body: unknown = JSON.parse(request.body);
+      return Promise.resolve(body && typeof body === 'object' && !Array.isArray(body) ? body as Record<string, unknown> : {});
+    } catch {
+      return Promise.reject(new Error('Invalid request body'));
+    }
+  }
+
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     let totalBytes = 0;
@@ -141,7 +156,7 @@ function readJson(request: IncomingMessage): Promise<Record<string, unknown>> {
 }
 
 export function createAuthMiddleware(env: AuthEnvironment) {
-  return async (request: IncomingMessage & { url?: string }, response: ServerResponse, next: Next) => {
+  return async (request: AuthRequest, response: ServerResponse, next: Next) => {
     const pathname = new URL(request.url ?? '/', 'http://localhost').pathname;
     if (pathname === '/api/initiatives' && request.method === 'GET') {
       try {

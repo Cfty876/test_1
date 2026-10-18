@@ -97,7 +97,13 @@ export async function authenticate(loginRaw: string, passRaw: string): Promise<U
   });
 
   if (response.status === 401) return null;
-  if (!response.ok) throw new Error('Сервер авторизации недоступен');
+  if (!response.ok) {
+    const result = await response.json().catch(() => null) as { error?: string } | null;
+    if (response.status === 503 && result?.error === 'Authentication is not configured') {
+      throw new Error('Авторизация не настроена в переменных окружения проекта Vercel.');
+    }
+    throw new Error('Сервер авторизации недоступен. Попробуйте позже.');
+  }
   const result = await response.json() as { user?: UserSession };
   return result.user ?? null;
 }
