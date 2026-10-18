@@ -1,7 +1,7 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { del, get, put } from '@vercel/blob';
+import { del, get, head, put } from '@vercel/blob';
 import type { ApplicationItem, BaseMember, AccessUser } from '../src/components/DashboardView.tsx';
 import type { ForwardedInitiative, Role } from '../src/utils/auth.ts';
 
@@ -68,8 +68,19 @@ function privateBlobStoreId(env: Record<string, string | undefined>): string {
 
 async function readBlobState(env: Record<string, string | undefined>): Promise<{ state: PlatformState; etag?: string; legacy?: boolean }> {
   const storeId = privateBlobStoreId(env);
-  const blob = await get(privateBlobPath(env), { access: 'private', useCache: false, storeId });
-  if (blob) return { state: decrypt(await new Response(blob.stream).text(), env), etag: blob.blob.etag };
+  const pathname = privateBlobPath(env);
+  let blob = await get(pathname, { access: 'private', useCache: false, storeId });
+  if (blob) {
+    let metadata = await head(pathname, { storeId });
+    if (metadata.etag !== blob.blob.etag) {
+      // Match the document body to the latest origin ETag before a CAS write.
+      blob = await get(pathname, { access: 'private', useCache: false, storeId });
+      if (!blob) throw new Error('Private platform snapshot changed while being read');
+      metadata = await head(pathname, { storeId });
+      if (metadata.etag !== blob.blob.etag) throw new Error('Private platform snapshot changed while being read');
+    }
+    return { state: decrypt(await new Response(blob.stream).text(), env), etag: metadata.etag };
+  }
 
   // Production can read the old encrypted snapshot from its former public store.
   // The first successful update writes it to the private store and removes the old copy.

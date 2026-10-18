@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { del, get, put } from '@vercel/blob';
+import { del, get, head, put } from '@vercel/blob';
 import { hasAdminSession } from '../server/authApi.ts';
 
 type Area = 'Мероприятия' | 'Медиа' | 'IT' | 'Волонтёрство';
@@ -37,10 +37,18 @@ function send(response: ServerResponse, status: number, body: unknown) {
 }
 
 async function readKey(key: string): Promise<{ initiatives: Initiative[]; etag?: string } | null> {
-  const blob = await get(key, { access: 'public', useCache: false, storeId: blobStoreId() });
+  const storeId = blobStoreId();
+  let blob = await get(key, { access: 'public', useCache: false, storeId });
   if (!blob) return null;
+  let metadata = await head(key, { storeId });
+  if (metadata.etag !== blob.blob.etag) {
+    blob = await get(key, { access: 'public', useCache: false, storeId });
+    if (!blob) return null;
+    metadata = await head(key, { storeId });
+    if (metadata.etag !== blob.blob.etag) throw new Error('Initiative board changed while being read');
+  }
   const data: unknown = await new Response(blob.stream).json();
-  return { initiatives: Array.isArray(data) ? data as Initiative[] : [], etag: blob.blob.etag };
+  return { initiatives: Array.isArray(data) ? data as Initiative[] : [], etag: metadata.etag };
 }
 
 async function readStore(): Promise<{ initiatives: Initiative[]; etag?: string; legacy: boolean }> {
