@@ -35,7 +35,6 @@ export const HomeView: React.FC<HomeViewProps> = ({ onGoToForm, onOpenLogin, ini
     <main className="platform-home-main">
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-copy">
-          <div className="home-kicker"><span className="home-kicker-dot" /> ЕКАТЕРИНБУРГ · СОВЕТ ПЕРВЫХ</div>
           <h1 id="home-title">
             <span className="home-title-line">Начни</span>
             <span className="home-title-line">перемены</span>

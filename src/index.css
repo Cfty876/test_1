@@ -192,20 +192,37 @@
 
 @media (max-width: 760px) {
   .platform-home-main { width: min(100% - 36px, 560px); }
-  .home-hero { min-height: 610px; padding: 38px 26px 42px; }
-  .home-copy { width: 68%; }
-  .home-copy h1 { font-size: clamp(37px, 7.3vw, 52px); }
-  .home-art { background-image: linear-gradient(90deg, rgba(255,255,255,.98) 0%, rgba(255,255,255,.94) 40%, rgba(255,255,255,.66) 58%, rgba(255,255,255,.05) 100%), url('/brand/hero-photo.png'); background-position: center, 62% center; }
+  .home-hero { min-height: 650px; align-items: flex-start; padding: 42px 26px 270px; background: #fff8f7; }
+  .home-copy { width: min(100%, 560px); padding-top: 2px; }
+  .home-copy h1 { max-width: 100%; margin: 0 0 17px; font-size: clamp(40px, 9vw, 58px); line-height: .94; letter-spacing: -.065em; }
+  .home-lede { max-width: 38ch; font-size: 15px; line-height: 1.58; }
+  .home-actions { gap: 10px; margin-top: 22px; }
+  .home-primary { min-height: 54px; border-radius: 999px; }
+  .home-login { min-height: 44px; padding: 0 15px; border: 1px solid #e6002322; border-radius: 999px; background: #ffffffb8; }
+  .home-art { background-image: linear-gradient(180deg, #fff 0%, #fff 38%, rgba(255,255,255,.94) 49%, rgba(255,255,255,.66) 61%, rgba(255,255,255,.04) 79%, rgba(230,0,35,.14) 100%), url('/brand/hero-photo.png'); background-position: center, 62% center; }
+  .home-art::before,.home-art::after { left: 73%; top: 76%; border-color: #ffffff85; }
+  .home-art::after { width: 310px; height: 310px; }
   .art-sun { width: 150px; height: 150px; }
   .areas-heading-row > p { display: none; }
-  .initiative-board-section { margin: 22px 0 34px; padding: 21px 17px; }
+  .initiative-board-section { margin: 19px 0 32px; padding: 22px 17px; border-radius: 20px; background: linear-gradient(145deg,#fff9f1,#fff2f3 56%,#f4f7ff); }
   .initiative-board-tools { align-items: stretch; flex-direction: column; }
   .initiative-search { width: 100%; }
+  .initiative-filters { flex-wrap: nowrap; overflow-x: auto; margin: 0 -17px; padding: 2px 17px 8px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .initiative-filters::-webkit-scrollbar { display: none; }
+  .initiative-filters button { flex: 0 0 auto; min-height: 36px; border: 1px solid #e8e4df; border-radius: 999px; background: #ffffffb8; }
+  .initiative-filters button[aria-pressed="true"] { border-color: #e60023; background: #e60023; color: #fff; }
   .initiative-sticker-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 11px; }
-  .initiative-sticker { min-height: 185px; padding: 22px 15px 14px; }
-  .initiative-dialog { padding: 27px 22px 22px; }
+  .initiative-sticker { min-height: 185px; padding: 24px 15px 15px; border-radius: 15px; box-shadow: 0 8px 20px #3c25300d; }
+  .initiative-sticker:nth-child(n) { transform: none; }
+  .initiative-sticker:active { transform: scale(.985); }
+  .initiative-dialog { padding: 28px 22px 22px; border-radius: 22px; }
   .area-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
-  .area-card { min-height: 122px; }
+  .area-card { min-height: 138px; padding: 16px; border-radius: 16px; }
+  .area-clay { background: #fff0e8; border-color: #f6dfd1; }
+  .area-sage { background: #edf7ef; border-color: #dcecdf; }
+  .area-blue { background: #edf3ff; border-color: #dce6fb; }
+  .area-yellow { background: #fff8df; border-color: #f0e6bd; }
+  .area-description { font-size: 11px; line-height: 1.45; }
   .footer-main { grid-template-columns: 1fr 1fr; gap: 30px 24px; padding: 31px 0 25px; }
   .footer-about { grid-column: 1 / -1; }
   .footer-bottom { min-height: 60px; flex-wrap: wrap; justify-content: flex-start; padding: 12px 0; }
@@ -214,19 +231,30 @@
 @media (max-width: 420px) {
   .platform-home-main { width: calc(100% - 30px); }
   .brand-logo { width: 104px; height: 104px; }
-  .home-hero { min-height: 680px; padding: 38px 20px 42px; }
+  .home-hero { min-height: 625px; padding: 34px 20px 238px; }
   .home-copy { width: 100%; }
-  .home-copy h1 { font-size: clamp(30px, 9.6vw, 38px); }
-  .home-art { background-image: linear-gradient(180deg, rgba(255,255,255,.99) 0%, rgba(255,255,255,.97) 68%, rgba(255,255,255,.68) 84%, rgba(255,255,255,.08) 100%), url('/brand/hero-photo.png'); background-position: center, 62% center; }
-  .home-actions { align-items: flex-start; flex-direction: column; gap: 17px; }
-  .initiative-board-heading { align-items: flex-start; }
-  .initiative-board-heading > div:first-child > p { max-width: 245px; font-size: 11px; }
+  .home-copy h1 { font-size: clamp(34px, 9.7vw, 41px); line-height: .96; }
+  .home-lede { max-width: 34ch; font-size: 14px; line-height: 1.55; }
+  .home-art { background-image: linear-gradient(180deg, #fff 0%, #fff 39%, rgba(255,255,255,.94) 52%, rgba(255,255,255,.64) 64%, rgba(255,255,255,.02) 82%, rgba(230,0,35,.16) 100%), url('/brand/hero-photo.png'); background-position: center, 63% center; }
+  .home-art::before { width: 200px; height: 200px; }
+  .home-art::after { width: 280px; height: 280px; }
+  .home-actions { align-items: stretch; flex-direction: column; gap: 9px; margin-top: 19px; }
+  .home-primary { width: 100%; justify-content: space-between; padding: 0 20px; }
+  .home-login { justify-content: center; }
+  .initiative-board-heading { align-items: flex-start; gap: 12px; }
+  .initiative-board-heading .section-eyebrow { max-width: 220px; font-size: 9px; line-height: 1.45; }
+  .initiative-board-heading h2 { font-size: 26px; }
+  .initiative-board-heading > div:first-child > p { max-width: 245px; font-size: 12px; line-height: 1.5; }
   .initiative-board-count { gap: 5px; padding: 8px; }
   .initiative-board-count span { display: none; }
-  .initiative-sticker-grid { grid-template-columns: 1fr; }
-  .initiative-sticker { min-height: 165px; }
+  .initiative-sticker-grid { grid-template-columns: 1fr; gap: 12px; }
+  .initiative-sticker { min-height: 158px; padding: 24px 18px 15px; }
+  .initiative-sticker > strong { font-size: 18px; }
+  .sticker-description { font-size: 12px; }
   .area-title { font-size: 18px; }
-  .area-description { max-width: 140px; line-height: 1.45; }
+  .area-description { max-width: 150px; line-height: 1.45; }
+  .footer-contact > a { min-height: 40px; align-items: center; padding: 3px 0; font-size: 12px; }
+  .footer-social-links a { min-height: 42px; }
   .footer-main { grid-template-columns: 1fr; gap: 23px; }
   .footer-about { grid-column: auto; }
   .footer-bottom { align-items: flex-start; flex-direction: column; gap: 9px; padding: 15px 0; }
