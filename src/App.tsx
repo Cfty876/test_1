@@ -13,27 +13,12 @@ import { LoginModal } from './components/LoginModal.tsx';
 import { fetchPublicInitiatives, publishPublicInitiative, type PublicInitiative } from './utils/publicInitiatives.ts';
 import { Toast, type ToastMessage } from './components/Toast.tsx';
 import {
-  getInitials,
   restoreSession,
   logoutSession,
   type UserSession,
   type ForwardedInitiative,
 } from './utils/auth.ts';
-import {
-  INITIAL_APPLICATIONS,
-  INITIAL_BASE_MEMBERS,
-  INITIAL_ACCESS_USERS,
-  INITIAL_FORWARDED_INITIATIVES,
-} from './utils/initialData.ts';
-
-const AVATAR_COLORS = [
-  '#FEE2E2', // soft red
-  '#E0E7FF', // soft indigo
-  '#FEF3C7', // soft amber
-  '#DCFCE7', // soft emerald
-  '#F3E8FF', // soft purple
-  '#CFFAFE', // soft cyan
-];
+import { platformRequest, type DashboardSnapshot } from './utils/platformApi.ts';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<'home' | 'form' | 'success' | 'cabinet'>('home');
@@ -42,11 +27,10 @@ export default function App() {
   const [initialHelpArea, setInitialHelpArea] = useState<HelpArea>('Мероприятия');
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
-  // Start with verified, real records only; no demonstration personal data.
-  const [applications, setApplications] = useState<ApplicationItem[]>(INITIAL_APPLICATIONS);
-  const [baseMembers, setBaseMembers] = useState<BaseMember[]>(INITIAL_BASE_MEMBERS);
-  const [accessUsers, setAccessUsers] = useState<AccessUser[]>(INITIAL_ACCESS_USERS);
-  const [forwardedInitiatives, setForwardedInitiatives] = useState<ForwardedInitiative[]>(INITIAL_FORWARDED_INITIATIVES);
+  const [applications, setApplications] = useState<ApplicationItem[]>([]);
+  const [baseMembers, setBaseMembers] = useState<BaseMember[]>([]);
+  const [accessUsers, setAccessUsers] = useState<AccessUser[]>([]);
+  const [forwardedInitiatives, setForwardedInitiatives] = useState<ForwardedInitiative[]>([]);
   const [publishedInitiatives, setPublishedInitiatives] = useState<PublicInitiative[]>([]);
 
   useEffect(() => {
@@ -88,6 +72,27 @@ export default function App() {
     setToast({ id: Date.now(), text });
   }, []);
 
+  useEffect(() => {
+    if (!currentUser) {
+      setApplications([]);
+      setBaseMembers([]);
+      setAccessUsers([]);
+      setForwardedInitiatives([]);
+      return;
+    }
+    let active = true;
+    void platformRequest<DashboardSnapshot>('/bootstrap').then((snapshot) => {
+      if (!active) return;
+      setApplications(snapshot.applications);
+      setBaseMembers(snapshot.baseMembers);
+      setAccessUsers(snapshot.accessUsers);
+      setForwardedInitiatives(snapshot.forwardedInitiatives);
+    }).catch((error: unknown) => {
+      if (active) showToast(error instanceof Error ? error.message : 'Не удалось загрузить данные кабинета');
+    });
+    return () => { active = false; };
+  }, [currentUser, showToast]);
+
   // Handlers for public flows
   const handleGoHome = () => {
     setCurrentView('home');
@@ -98,29 +103,13 @@ export default function App() {
     setCurrentView('form');
   };
 
-  const handleFormSubmitSuccess = (formData: ApplicationFormData) => {
-    const isInit = formData.isInitiative;
-    const resolvedCategory = formData.customCategoryText
-      ? `Свой: ${formData.customCategoryText}`
-      : formData.category;
-
-    const newApp: ApplicationItem = {
-      id: `app-${Date.now()}`,
-      name: formData.name,
-      category: resolvedCategory,
-      description: formData.description,
-      phone: formData.phone,
-      email: formData.email,
-      initials: getInitials(formData.name),
-      avatarBg: AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
-      actionText: isInit ? 'Добавить' : formData.category.includes('партнёр') ? 'В партнёры' : 'В работу',
-      status: 'pending',
-      isInitiative: isInit,
-      area: formData.helpArea || 'Мероприятия',
-    };
-
-    setApplications((prev) => [newApp, ...prev]);
-    setCurrentView('success');
+  const handleFormSubmitSuccess = async (formData: ApplicationFormData) => {
+    try {
+      await platformRequest<ApplicationItem>('/applications', formData);
+      setCurrentView('success');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Не удалось отправить заявку. Попробуйте ещё раз.');
+    }
   };
 
   // Handlers for authentication
@@ -144,81 +133,62 @@ export default function App() {
   };
 
   // Handlers for cabinet actions
-  const handleAcceptApplication = (id: string) => {
-    const target = applications.find((a) => a.id === id);
-    if (!target) return;
+  const handleAcceptApplication = async (id: string) => {
+    try {
+      const result = await platformRequest<{ application: ApplicationItem; member: BaseMember | null }>('/applications/status', { id, status: 'accepted' });
+      const target = result.application;
+      setApplications((prev) => prev.map((item) => item.id === id ? target : item));
+      if (result.member) setBaseMembers((prev) => [result.member as BaseMember, ...prev.filter((item) => item.id !== result.member?.id)]);
 
-    setApplications((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status: 'accepted' } : a))
-    );
-
-    if (target.isInitiative) {
-      const firstLine = target.description.split(/[.!?\n]/, 1)[0]?.trim() || 'Новая инициатива';
-      const title = firstLine.length > 64 ? `${firstLine.slice(0, 61).trimEnd()}…` : firstLine;
-      const area: HelpArea = target.area === 'Медиа' || target.area === 'IT' || target.area === 'Волонтёрство'
-        ? target.area
-        : 'Мероприятия';
-      const initiative = { id: target.id, title, description: target.description, area, author: target.name, publishedAt: new Date().toISOString() };
-      void publishPublicInitiative(initiative).then((saved) => {
-        setPublishedInitiatives((prev) => [saved, ...prev.filter((item) => item.id !== saved.id)]);
-        showToast('Инициатива опубликована на общей доске');
-      }).catch((error: unknown) => {
-        showToast(error instanceof Error ? `Не удалось опубликовать: ${error.message}` : 'Не удалось опубликовать инициативу');
-      });
+      if (target.isInitiative) {
+        const firstLine = target.description.split(/[.!?\n]/, 1)[0]?.trim() || 'Новая инициатива';
+        const title = firstLine.length > 64 ? `${firstLine.slice(0, 61).trimEnd()}…` : firstLine;
+        const area: HelpArea = target.area === 'Медиа' || target.area === 'IT' || target.area === 'Волонтёрство'
+          ? target.area
+          : 'Мероприятия';
+        const initiative = { id: target.id, title, description: target.description, area, author: target.name, publishedAt: new Date().toISOString() };
+        void publishPublicInitiative(initiative).then((saved) => {
+          setPublishedInitiatives((prev) => [saved, ...prev.filter((item) => item.id !== saved.id)]);
+          showToast('Инициатива опубликована на общей доске');
+        }).catch((error: unknown) => {
+          showToast(error instanceof Error ? `Не удалось опубликовать: ${error.message}` : 'Не удалось опубликовать инициативу');
+        });
+      } else {
+        showToast('Заявка принята и добавлена в базу');
+      }
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Не удалось принять заявку');
     }
-
-    // Determine category classification
-    let baseCategory: 'Мероприятия' | 'Медиа' | 'IT' | 'Волонтёрство' | 'Партнёры' = 'Мероприятия';
-    if (target.area === 'Медиа' || target.category.includes('Медиа')) baseCategory = 'Медиа';
-    else if (target.area === 'IT' || target.category.includes('IT')) baseCategory = 'IT';
-    else if (target.area === 'Волонтёрство' || target.category.includes('Волонтёр')) baseCategory = 'Волонтёрство';
-    else if (target.category.includes('партнёр')) baseCategory = 'Партнёры';
-
-    // Add to base members
-    const newMember: BaseMember = {
-      id: `base-${Date.now()}`,
-      name: target.name,
-      roleInfo: `${target.category} · Екатеринбург`,
-      category: baseCategory,
-      isInitiative: Boolean(target.isInitiative),
-      phone: target.phone,
-      email: target.email,
-      initials: target.initials,
-      avatarBg: target.avatarBg,
-      description: target.description,
-      branch: 'Новое поступление',
-      author: target.name,
-      dateAdded: 'Сегодня',
-    };
-    setBaseMembers((prev) => [newMember, ...prev]);
-
-    if (!target.isInitiative) showToast('Добавлено в базу');
   };
 
-  const handleRejectApplication = (id: string) => {
-    setApplications((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status: 'rejected' } : a))
-    );
-    showToast('Отклонено');
+  const handleRejectApplication = async (id: string) => {
+    try {
+      const result = await platformRequest<{ application: ApplicationItem }>('/applications/status', { id, status: 'rejected' });
+      setApplications((prev) => prev.map((item) => item.id === id ? result.application : item));
+      showToast('Заявка отклонена');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Не удалось отклонить заявку');
+    }
   };
 
-  const handleResetPassword = (_user: AccessUser) => {
-    showToast('Сброс пароля появится после подключения серверной авторизации.');
+  const handleResetPassword = async (user: AccessUser) => {
+    try {
+      const result = await platformRequest<{ user: AccessUser }>('/users/reset-password', { id: user.id });
+      setAccessUsers((prev) => prev.map((item) => item.id === user.id ? result.user : item));
+      showToast('Новый пароль создан и показан в карточке пользователя');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Не удалось сбросить пароль');
+    }
   };
 
-  const handleCreateAccess = (user: { name: string; roleInfo: string; login: string; password: string; branch: string }) => {
-    const newAccessUser: AccessUser = {
-      id: `usr-${Date.now()}`,
-      name: user.name,
-      roleInfo: user.roleInfo,
-      login: user.login,
-      password: user.password,
-      branch: user.branch,
-      initials: getInitials(user.name),
-      avatarBg: AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)],
-    };
-    setAccessUsers((prev) => [newAccessUser, ...prev]);
-    showToast('Доступ добавлен в список. Для входа этому пользователю нужна настройка серверной авторизации.');
+  const handleCreateAccess = async (user: { name: string; roleInfo: string; login: string; password: string; branch: string }) => {
+    try {
+      const result = await platformRequest<{ user: AccessUser }>('/users', user);
+      setAccessUsers((prev) => [result.user, ...prev]);
+      showToast('Учётная запись создана. Пароль отображается в списке пользователей.');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Не удалось создать доступ');
+    }
   };
 
   const handleSendInitiativeToPartner = (payload: {
@@ -226,15 +196,17 @@ export default function App() {
     senderNote: string;
     initiative: ForwardedInitiative;
   }) => {
-    setForwardedInitiatives((prev) => [payload.initiative, ...prev]);
-    showToast(`Инициатива отправлена: ${payload.partnerName}`);
+    void platformRequest<ForwardedInitiative>('/forwarded-initiatives', payload).then((initiative) => {
+      setForwardedInitiatives((prev) => [initiative, ...prev]);
+      showToast(`Инициатива отправлена: ${payload.partnerName}`);
+    }).catch((error: unknown) => showToast(error instanceof Error ? error.message : 'Не удалось отправить инициативу'));
   };
 
   const handleSupportInitiative = (id: string) => {
-    setForwardedInitiatives((prev) =>
-      prev.map((fwd) => (fwd.id === id ? { ...fwd, status: 'supported' } : fwd))
-    );
-    showToast('Инициатива взята в партнёрскую поддержку');
+    void platformRequest<{ ok: boolean }>('/partner-inbox/status', { id }).then(() => {
+      setForwardedInitiatives((prev) => prev.map((item) => item.id === id ? { ...item, status: 'supported' } : item));
+      showToast('Инициатива взята в партнёрскую поддержку');
+    }).catch((error: unknown) => showToast(error instanceof Error ? error.message : 'Не удалось обновить инициативу'));
   };
 
   return (

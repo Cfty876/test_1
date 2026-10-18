@@ -1029,7 +1029,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   onChange={(e) => setNewUserPassword(e.target.value)}
                   className="pervik-input font-mono"
                 />
-                <p className="mt-1 text-[11px] text-[#6B7280]">Пароль будет показан администратору в карточке пользователя.</p>
+                <p className="mt-1 text-[11px] text-[#6B7280]">Пароль показывается при создании и сбросе. Сохраните его: в базе хранится только защищённый хеш.</p>
               </div>
 
               <div className="pt-2">

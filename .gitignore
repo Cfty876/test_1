@@ -11,3 +11,4 @@ coverage/
 .vercel/
 data/*.tmp
 data/public-initiatives.json
+data/platform-state.json

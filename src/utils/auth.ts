@@ -39,6 +39,7 @@ export interface ForwardedInitiative {
   sentDate: string;
   status: 'new' | 'reviewed' | 'supported';
   partnerName: string;
+  partnerId?: string;
 }
 
 export const ROLE_CONFIGS: Record<Role, CredentialConfig> = {
@@ -101,6 +102,9 @@ export async function authenticate(loginRaw: string, passRaw: string): Promise<U
     const result = await response.json().catch(() => null) as { error?: string } | null;
     if (response.status === 503 && result?.error === 'Authentication is not configured') {
       throw new Error('Авторизация не настроена в переменных окружения проекта Vercel.');
+    }
+    if (response.status === 503 && result?.error === 'Platform storage is not configured') {
+      throw new Error('Не подключено хранилище платформы. Проверьте Vercel Blob и BLOB_READ_WRITE_TOKEN.');
     }
     throw new Error('Сервер авторизации недоступен. Попробуйте позже.');
   }

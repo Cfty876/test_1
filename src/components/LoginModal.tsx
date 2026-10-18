@@ -126,8 +126,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       } else {
         showToast('Неверный логин или пароль');
       }
-    } catch {
-      showToast('Сервер авторизации недоступен');
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : 'Сервер авторизации недоступен');
     } finally {
       setIsSubmitting(false);
     }

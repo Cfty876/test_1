@@ -3,15 +3,18 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 import { createAuthMiddleware } from './server/authApi.ts';
+import { createPlatformApi } from './server/platformApi.ts';
 
 export default defineConfig(({ mode }) => {
   const authEnvironment = { ...process.env, ...loadEnv(mode, process.cwd(), '') };
   const authApi = {
     name: 'movement-firsts-auth-api',
-    configureServer(server: { middlewares: { use: (middleware: ReturnType<typeof createAuthMiddleware>) => void } }) {
+    configureServer(server: { middlewares: { use: (middleware: (...args: any[]) => any) => void } }) {
+      server.middlewares.use(createPlatformApi(authEnvironment));
       server.middlewares.use(createAuthMiddleware(authEnvironment));
     },
-    configurePreviewServer(server: { middlewares: { use: (middleware: ReturnType<typeof createAuthMiddleware>) => void } }) {
+    configurePreviewServer(server: { middlewares: { use: (middleware: (...args: any[]) => any) => void } }) {
+      server.middlewares.use(createPlatformApi(authEnvironment));
       server.middlewares.use(createAuthMiddleware(authEnvironment));
     },
   };
