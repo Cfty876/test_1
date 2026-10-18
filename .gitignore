@@ -1,0 +1,13 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+.aistudio/
+.vercel/
+data/*.tmp
+data/public-initiatives.json

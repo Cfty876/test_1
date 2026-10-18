@@ -1,0 +1,6 @@
+{
+  "name": "Движение Первых — Совет Екатеринбурга",
+  "description": "Платформа для приёма заявок на мероприятия и кабинет первичных отделений Совета первых Екатеринбурга.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
