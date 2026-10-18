@@ -38,15 +38,9 @@ function send(response: ServerResponse, status: number, body: unknown) {
 
 async function readKey(key: string): Promise<{ initiatives: Initiative[]; etag?: string } | null> {
   const storeId = blobStoreId();
-  let blob = await get(key, { access: 'public', useCache: false, storeId });
+  const blob = await get(key, { access: 'public', useCache: false, storeId });
   if (!blob) return null;
-  let metadata = await head(key, { storeId });
-  if (metadata.etag !== blob.blob.etag) {
-    blob = await get(key, { access: 'public', useCache: false, storeId });
-    if (!blob) return null;
-    metadata = await head(key, { storeId });
-    if (metadata.etag !== blob.blob.etag) throw new Error('Initiative board changed while being read');
-  }
+  const metadata = await head(key, { storeId });
   const data: unknown = await new Response(blob.stream).json();
   return { initiatives: Array.isArray(data) ? data as Initiative[] : [], etag: metadata.etag };
 }
