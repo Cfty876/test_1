@@ -15,7 +15,7 @@ type VercelRequest = IncomingMessage & { method?: string; body?: unknown };
 
 const LEGACY_STORE_KEY = 'pervik/public-initiatives.json';
 const ALLOWED_AREAS = new Set<Area>(['Мероприятия', 'Медиа', 'IT', 'Волонтёрство']);
-const MAX_WRITE_ATTEMPTS = 5;
+const MAX_WRITE_ATTEMPTS = 6;
 
 function storeKey(): string {
   const environment = process.env.VERCEL_ENV === 'production' ? 'production' : 'preview';
@@ -110,7 +110,9 @@ export default async function handler(request: VercelRequest, response: ServerRe
         return send(response, 201, initiative);
       } catch (error) {
         if (attempt === MAX_WRITE_ATTEMPTS - 1) throw error;
-        await new Promise((resolve) => setTimeout(resolve, 30 * (attempt + 1)));
+        const backoffMs = Math.min(100 * 2 ** attempt, 1_500);
+        const jitterMs = Math.floor(Math.random() * 100);
+        await new Promise((resolve) => setTimeout(resolve, backoffMs + jitterMs));
       }
     }
     throw new Error('Could not publish initiative');

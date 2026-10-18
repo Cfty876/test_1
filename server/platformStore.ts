@@ -20,7 +20,7 @@ export interface PlatformState {
 
 const LEGACY_BLOB_PATH = 'pervik/private-platform-state.enc';
 const LOCAL_PATH = path.join(process.cwd(), 'data', 'platform-state.json');
-const MAX_BLOB_WRITE_ATTEMPTS = 5;
+const MAX_BLOB_WRITE_ATTEMPTS = 6;
 const EMPTY_STATE: PlatformState = {
   applications: [],
   baseMembers: [],
@@ -163,7 +163,9 @@ export async function updatePlatformState<T>(update: (state: PlatformState) => {
         return updated.result;
       } catch (error) {
         if (attempt === MAX_BLOB_WRITE_ATTEMPTS - 1) throw error;
-        await new Promise((resolve) => setTimeout(resolve, 20 * (attempt + 1)));
+        const backoffMs = Math.min(250 * 2 ** attempt, 4_000);
+        const jitterMs = randomBytes(1)[0] % 150;
+        await new Promise((resolve) => setTimeout(resolve, backoffMs + jitterMs));
       }
     }
     throw new Error('Could not update platform state');
