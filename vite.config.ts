@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => {
     plugins: [authApi, react(), tailwindcss()],
     resolve: {
       alias: {
-        '@': path.resolve(__dirname, '.'),
+        '@': path.resolve(import.meta.dirname, '.'),
       },
     },
     server: {

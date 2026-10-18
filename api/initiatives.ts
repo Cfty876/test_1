@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { list, put } from '@vercel/blob';
+import { del, get, put } from '@vercel/blob';
 import { hasAdminSession } from '../server/authApi.ts';
 
 type Area = 'Мероприятия' | 'Медиа' | 'IT' | 'Волонтёрство';
@@ -13,8 +13,21 @@ interface Initiative {
 }
 type VercelRequest = IncomingMessage & { method?: string; body?: unknown };
 
-const STORE_KEY = 'pervik/public-initiatives.json';
+const LEGACY_STORE_KEY = 'pervik/public-initiatives.json';
 const ALLOWED_AREAS = new Set<Area>(['Мероприятия', 'Медиа', 'IT', 'Волонтёрство']);
+const MAX_WRITE_ATTEMPTS = 5;
+
+function storeKey(): string {
+  const environment = process.env.VERCEL_ENV === 'production' ? 'production' : 'preview';
+  return `pervik/${environment}/public-initiatives.json`;
+}
+
+function blobStoreId(): string {
+  const environment = process.env.VERCEL_ENV === 'production' ? 'PRODUCTION' : 'PREVIEW';
+  const storeId = process.env[`BLOB_${environment}_STORE_ID`]?.trim();
+  if (!storeId) throw new Error(`BLOB_${environment}_STORE_ID is required for initiative storage`);
+  return storeId;
+}
 
 function send(response: ServerResponse, status: number, body: unknown) {
   response.statusCode = status;
@@ -23,30 +36,41 @@ function send(response: ServerResponse, status: number, body: unknown) {
   response.end(JSON.stringify(body));
 }
 
-async function readStore(): Promise<Initiative[]> {
-  const { blobs } = await list({ prefix: STORE_KEY, limit: 1 });
-  const blob = blobs.find((item) => item.pathname === STORE_KEY);
-  if (!blob) return [];
-  const response = await fetch(blob.url, { cache: 'no-store' });
-  if (!response.ok) throw new Error('Could not read initiative storage');
-  const data: unknown = await response.json();
-  return Array.isArray(data) ? data as Initiative[] : [];
+async function readKey(key: string): Promise<{ initiatives: Initiative[]; etag?: string } | null> {
+  const blob = await get(key, { access: 'public', useCache: false, storeId: blobStoreId() });
+  if (!blob) return null;
+  const data: unknown = await new Response(blob.stream).json();
+  return { initiatives: Array.isArray(data) ? data as Initiative[] : [], etag: blob.blob.etag };
 }
 
-async function writeStore(initiatives: Initiative[]): Promise<void> {
-  await put(STORE_KEY, JSON.stringify(initiatives), {
+async function readStore(): Promise<{ initiatives: Initiative[]; etag?: string; legacy: boolean }> {
+  const current = await readKey(storeKey());
+  if (current) return { ...current, legacy: false };
+
+  // Preserve the existing production board and move it on the next successful publish.
+  if (process.env.VERCEL_ENV === 'production') {
+    const legacy = await readKey(LEGACY_STORE_KEY);
+    if (legacy) return { ...legacy, legacy: true };
+  }
+  return { initiatives: [], legacy: false };
+}
+
+async function writeStore(initiatives: Initiative[], etag?: string): Promise<void> {
+  await put(storeKey(), JSON.stringify(initiatives), {
     access: 'public',
+    storeId: blobStoreId(),
     addRandomSuffix: false,
-    allowOverwrite: true,
+    allowOverwrite: Boolean(etag),
+    ...(etag ? { ifMatch: etag } : {}),
     contentType: 'application/json; charset=utf-8',
-    cacheControlMaxAge: 0,
+    cacheControlMaxAge: 60,
   });
 }
 
 export default async function handler(request: VercelRequest, response: ServerResponse) {
   if (request.method === 'GET') {
     try {
-      return send(response, 200, await readStore());
+      return send(response, 200, (await readStore()).initiatives);
     } catch {
       return send(response, 503, { error: 'Инициативы пока недоступны: не настроено хранилище.' });
     }
@@ -70,9 +94,26 @@ export default async function handler(request: VercelRequest, response: ServerRe
 
   try {
     const initiative: Initiative = { id, title, description, area: area as Area, author, publishedAt: new Date().toISOString() };
-    const current = await readStore();
-    await writeStore([initiative, ...current.filter((item) => item.id !== id)]);
-    return send(response, 201, initiative);
+    for (let attempt = 0; attempt < MAX_WRITE_ATTEMPTS; attempt += 1) {
+      const current = await readStore();
+      try {
+        // A legacy ETag belongs to a different key and cannot guard this destination write.
+        await writeStore([initiative, ...current.initiatives.filter((item) => item.id !== id)], current.legacy ? undefined : current.etag);
+        if (current.legacy) {
+          // The destination is committed before removing the old public snapshot.
+          try {
+            await del(LEGACY_STORE_KEY, { storeId: blobStoreId() });
+          } catch (error) {
+            console.error('Legacy initiative snapshot cleanup failed:', error instanceof Error ? error.name : 'UnknownError');
+          }
+        }
+        return send(response, 201, initiative);
+      } catch (error) {
+        if (attempt === MAX_WRITE_ATTEMPTS - 1) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 30 * (attempt + 1)));
+      }
+    }
+    throw new Error('Could not publish initiative');
   } catch {
     return send(response, 503, { error: 'Не удалось сохранить инициативу. Проверьте настройки хранилища.' });
   }
