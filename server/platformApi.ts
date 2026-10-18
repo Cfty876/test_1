@@ -289,7 +289,9 @@ export function createPlatformApi(env: Environment) {
       return send(response, 404, { error: 'Not found' });
     } catch (error) {
       // Keep personal data out of platform logs; record only the failure class.
-      console.error('Platform API failed:', error instanceof Error ? error.name : 'UnknownError');
+      console.error('Platform API failed:', error instanceof Error
+        ? { name: error.name, message: error.message.slice(0, 240) }
+        : 'UnknownError');
       return send(response, 503, { error: 'Сервис временно недоступен. Проверьте подключение хранилища.' });
     }
   };
