@@ -1,4 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { list, put } from '@vercel/blob';
 import { hasAdminSession } from '../server/authApi.ts';
 
 type Area = 'Мероприятия' | 'Медиа' | 'IT' | 'Волонтёрство';
@@ -12,9 +13,7 @@ interface Initiative {
 }
 type VercelRequest = IncomingMessage & { method?: string; body?: unknown };
 
-const STORE_KEY = 'pervik:public-initiatives';
-const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL?.replace(/\/$/, '');
-const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+const STORE_KEY = 'pervik/public-initiatives.json';
 const ALLOWED_AREAS = new Set<Area>(['Мероприятия', 'Медиа', 'IT', 'Волонтёрство']);
 
 function send(response: ServerResponse, status: number, body: unknown) {
@@ -25,25 +24,23 @@ function send(response: ServerResponse, status: number, body: unknown) {
 }
 
 async function readStore(): Promise<Initiative[]> {
-  if (!UPSTASH_URL || !UPSTASH_TOKEN) throw new Error('Initiative storage is not configured');
-  const response = await fetch(`${UPSTASH_URL}/get/${STORE_KEY}`, {
-    headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
-  });
+  const { blobs } = await list({ prefix: STORE_KEY, limit: 1 });
+  const blob = blobs.find((item) => item.pathname === STORE_KEY);
+  if (!blob) return [];
+  const response = await fetch(blob.url, { cache: 'no-store' });
   if (!response.ok) throw new Error('Could not read initiative storage');
-  const payload = await response.json() as { result?: string | null };
-  if (!payload.result) return [];
-  const data: unknown = JSON.parse(payload.result);
+  const data: unknown = await response.json();
   return Array.isArray(data) ? data as Initiative[] : [];
 }
 
 async function writeStore(initiatives: Initiative[]): Promise<void> {
-  if (!UPSTASH_URL || !UPSTASH_TOKEN) throw new Error('Initiative storage is not configured');
-  const response = await fetch(`${UPSTASH_URL}/set/${STORE_KEY}`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${UPSTASH_TOKEN}`, 'Content-Type': 'text/plain; charset=utf-8' },
-    body: JSON.stringify(initiatives),
+  await put(STORE_KEY, JSON.stringify(initiatives), {
+    access: 'public',
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    contentType: 'application/json; charset=utf-8',
+    cacheControlMaxAge: 0,
   });
-  if (!response.ok) throw new Error('Could not write initiative storage');
 }
 
 export default async function handler(request: VercelRequest, response: ServerResponse) {

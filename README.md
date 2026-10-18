@@ -16,10 +16,10 @@
 
 1. Создать репозиторий Git и загрузить туда файлы проекта. Не добавлять `.env.local`, `.vercel/` и секреты.
 2. Импортировать репозиторий в Vercel; Framework Preset должен определиться как Vite.
-3. Создать Upstash Redis через Marketplace Vercel и добавить в Environment Variables проекта `UPSTASH_REDIS_REST_URL` и `UPSTASH_REDIS_REST_TOKEN`.
+3. Подключить к проекту созданное Vercel Blob-хранилище `ake767` и убедиться, что в Production Variables доступен `BLOB_READ_WRITE_TOKEN`.
 4. Добавить серверные переменные `AUTH_USERNAME`, `AUTH_DISPLAY_NAME`, `AUTH_ROLE=admin`, `AUTH_PASSWORD_SALT`, `AUTH_PASSWORD_HASH`, `AUTH_SESSION_SECRET` из защищённой локальной конфигурации администратора. Установить `AUTH_COOKIE_SECURE=true`.
 5. Запустить деплой. Изменения переменных окружения применяются при следующем деплое.
 
-На Vercel список одобренных инициатив хранится в Upstash Redis, а не в файле проекта. Для локальной разработки API использует `data/public-initiatives.json`.
+На Vercel список одобренных инициатив хранится в Vercel Blob по пути `pervik/public-initiatives.json`, а не в файловой системе функции. Для локальной разработки API использует `data/public-initiatives.json`.
 
 Публикация инициатив доступна только администратору с действующей сессией. Публичная доска получает только название, описание, направление, имя автора и дату; телефон и почта не передаются.
