@@ -1,12 +1,19 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, ArrowUpRight, CalendarDays, Globe2, Lightbulb, LogIn, Mail, Phone, Search, X } from 'lucide-react';
 import type { HelpArea } from './ApplicationFormView.tsx';
 import type { PublicInitiative } from '../utils/publicInitiatives.ts';
+import type { FeaturedInitiative } from '../utils/homepage.ts';
+import { HelpWanted, HowItWorks } from './HomeSections.tsx';
 
 interface HomeViewProps {
-  onGoToForm: (area?: HelpArea) => void;
+  onGoToForm: (area?: HelpArea, initiative?: PublicInitiative) => void;
   onOpenLogin: () => void;
   initiatives: PublicInitiative[];
+  featuredInitiatives: FeaturedInitiative[];
+  loading: boolean;
+  loadError: boolean;
+  featuredLoadError: boolean;
+  onRetry: () => void;
 }
 
 const areas = [
@@ -18,10 +25,14 @@ const areas = [
 
 const boardAreas: Array<'Все' | HelpArea> = ['Все', 'Мероприятия', 'Медиа', 'IT', 'Волонтёрство'];
 
-export const HomeView: React.FC<HomeViewProps> = ({ onGoToForm, onOpenLogin, initiatives }) => {
+export const HomeView: React.FC<HomeViewProps> = ({ onGoToForm, onOpenLogin, initiatives, featuredInitiatives, loading, loadError, featuredLoadError, onRetry }) => {
   const [selectedArea, setSelectedArea] = useState<'Все' | HelpArea>('Все');
   const [query, setQuery] = useState('');
   const [selectedInitiative, setSelectedInitiative] = useState<PublicInitiative | null>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    if (selectedInitiative && !dialogRef.current?.open) dialogRef.current?.showModal();
+  }, [selectedInitiative]);
   const visibleInitiatives = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase('ru');
     return initiatives.filter((initiative) => {
@@ -53,17 +64,20 @@ export const HomeView: React.FC<HomeViewProps> = ({ onGoToForm, onOpenLogin, ini
           </div>
         </div>
 
-        <div className="home-art" aria-label="Участники Движения Первых" />
+        <div className="home-art" role="img" aria-label="Участники Движения Первых" />
       </section>
+
+      <HowItWorks onStart={() => onGoToForm()} />
+      <HelpWanted initiatives={featuredInitiatives} loadError={featuredLoadError} onDetails={setSelectedInitiative} onJoin={(initiative) => onGoToForm(initiative.area, initiative)} />
 
       <section className="initiative-board-section" aria-labelledby="initiative-board-title">
         <div className="initiative-board-heading">
           <div>
             <div className="section-eyebrow"><span className="home-kicker-dot" /> ИДЕИ, КОТОРЫЕ СТАНОВЯТСЯ ДЕЛОМ</div>
             <h2 id="initiative-board-title">Доска инициатив</h2>
-            <p>Идеи ребят Екатеринбурга, которые уже получили поддержку Совета Первых.</p>
+            <p>Одобренные Советом идеи ребят Екатеринбурга. Выбери ту, к которой хочешь присоединиться.</p>
           </div>
-          <div className="initiative-board-count"><Lightbulb size={18} /><strong>{initiatives.length}</strong><span>{initiatives.length === 1 ? 'инициатива' : 'инициатив'}</span></div>
+          <div className="initiative-board-count"><Lightbulb size={18} /><strong>{initiatives.length}</strong><span>{initiatives.length % 10 === 1 && initiatives.length % 100 !== 11 ? 'инициатива' : initiatives.length % 10 >= 2 && initiatives.length % 10 <= 4 && (initiatives.length % 100 < 12 || initiatives.length % 100 > 14) ? 'инициативы' : 'инициатив'}</span></div>
         </div>
 
         <div className="initiative-board-tools">
@@ -78,7 +92,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ onGoToForm, onOpenLogin, ini
           </div>
         </div>
 
-        {visibleInitiatives.length ? (
+        {loadError && <p className="inline-error" role="alert">Не удалось обновить доску инициатив. <button type="button" onClick={onRetry}>Попробовать снова</button></p>}
+        {loading && !initiatives.length ? <p className="board-loading" role="status">Загружаем инициативы…</p> : visibleInitiatives.length ? (
           <div className="initiative-sticker-grid">
             {visibleInitiatives.map((initiative, index) => (
               <button type="button" key={initiative.id} onClick={() => setSelectedInitiative(initiative)} className={`initiative-sticker sticker-tone-${index % 4}`}>
@@ -90,14 +105,14 @@ export const HomeView: React.FC<HomeViewProps> = ({ onGoToForm, onOpenLogin, ini
               </button>
             ))}
           </div>
-        ) : (
+        ) : !loadError ? (
           <div className="initiative-board-empty">
             <div className="initiative-empty-icon"><Lightbulb size={22} /></div>
             <h3>{initiatives.length ? 'По этому запросу идей пока нет' : 'Здесь появятся идеи ребят'}</h3>
             <p>{initiatives.length ? 'Попробуй другое направление или измени поиск.' : 'Предложи свою инициативу. После одобрения Советом она появится на этой доске.'}</p>
             {!initiatives.length && <button type="button" onClick={() => onGoToForm()} className="initiative-empty-cta">Предложить инициативу <ArrowRight size={16} /></button>}
           </div>
-        )}
+        ) : null}
       </section>
 
       <section className="areas-section" aria-labelledby="areas-heading">
@@ -172,16 +187,14 @@ export const HomeView: React.FC<HomeViewProps> = ({ onGoToForm, onOpenLogin, ini
       </footer>
     </main>
       {selectedInitiative && (
-        <div className="initiative-dialog-backdrop" role="presentation" onClick={() => setSelectedInitiative(null)}>
-          <section className="initiative-dialog" role="dialog" aria-modal="true" aria-labelledby="initiative-dialog-title" onClick={(event) => event.stopPropagation()}>
-            <button type="button" className="initiative-dialog-close" aria-label="Закрыть" onClick={() => setSelectedInitiative(null)}><X size={19} /></button>
+          <dialog ref={dialogRef} className="initiative-dialog" aria-labelledby="initiative-dialog-title" onClose={() => setSelectedInitiative(null)} onClick={(event) => { if (event.target === event.currentTarget) { const rect = event.currentTarget.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) event.currentTarget.close(); } }}>
+            <button type="button" className="initiative-dialog-close" aria-label="Закрыть" onClick={() => dialogRef.current?.close()}><X size={19} /></button>
             <span className="initiative-dialog-area">{selectedInitiative.area}</span>
             <h2 id="initiative-dialog-title">{selectedInitiative.title}</h2>
             <p className="initiative-dialog-description">{selectedInitiative.description}</p>
             <div className="initiative-dialog-meta"><span>Автор: {selectedInitiative.author}</span><span><CalendarDays size={14} /> {new Date(selectedInitiative.publishedAt).toLocaleDateString('ru-RU')}</span></div>
-            <button type="button" className="initiative-empty-cta" onClick={() => { setSelectedInitiative(null); onGoToForm(selectedInitiative.area); }}>Хочу помочь <ArrowRight size={16} /></button>
-          </section>
-        </div>
+            <button type="button" className="initiative-empty-cta" onClick={() => { onGoToForm(selectedInitiative.area, selectedInitiative); }}>Хочу помочь <ArrowRight size={16} /></button>
+          </dialog>
       )}
   </div>;
 };

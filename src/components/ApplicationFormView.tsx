@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { ArrowLeftIcon, LightbulbIcon } from './Icons.tsx';
+import type { PublicInitiative } from '../utils/publicInitiatives.ts';
+import { PARTICIPATION_OPTIONS, ParticipationSelect } from './ParticipationSelect.tsx';
 
 export type HelpArea = 'Мероприятия' | 'Медиа' | 'IT' | 'Волонтёрство';
 
@@ -12,25 +14,16 @@ export interface ApplicationFormData {
   phone: string;
   email: string;
   isInitiative: boolean;
+  supportInitiativeId?: string;
+  submissionId?: string;
 }
 
 interface ApplicationFormViewProps {
   onGoHome: () => void;
-  onSubmitSuccess: (data: ApplicationFormData) => void;
+  onSubmitSuccess: (data: ApplicationFormData) => Promise<void>;
   initialHelpArea: HelpArea;
+  initialInitiative: PublicInitiative | null;
 }
-
-// «Есть своя инициатива» is FIRST per user request!
-const CATEGORY_OPTIONS = [
-  'Есть своя инициатива',
-  'Хочу быть ведущим',
-  'Медиа, фото, видео',
-  'IT и техническая поддержка',
-  'Мастер-класс',
-  'Волонтёр',
-  'Я — организация-партнёр',
-  'Свой вариант (указать область)',
-];
 
 const HELP_AREAS: { id: HelpArea; label: string; desc: string }[] = [
   { id: 'Мероприятия', label: 'Мероприятия', desc: 'Сцена, организация, ведение, логистика' },
@@ -43,17 +36,22 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
   onGoHome,
   onSubmitSuccess,
   initialHelpArea,
+  initialInitiative,
 }) => {
   const [formData, setFormData] = useState<ApplicationFormData>({
     name: '',
-    category: CATEGORY_OPTIONS[0], // 'Есть своя инициатива' by default
+    category: initialInitiative ? 'Хочу помочь инициативе' : PARTICIPATION_OPTIONS[0].value,
     customCategoryText: '',
     helpArea: initialHelpArea,
     description: '',
     phone: '',
     email: '',
-    isInitiative: true,
+    isInitiative: !initialInitiative,
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const submission = useRef({ fingerprint: '', id: '' });
+  const isSupport = Boolean(initialInitiative && formData.category === 'Хочу помочь инициативе');
 
   const isCustomOption = formData.category === 'Свой вариант (указать область)';
   const isInitiativeOption = formData.category === 'Есть своя инициатива';
@@ -68,8 +66,9 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     if (
       !formData.name.trim() ||
       !formData.phone.trim() ||
@@ -82,7 +81,16 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
       return;
     }
 
-    onSubmitSuccess(formData);
+    setSubmitError('');
+    setIsSubmitting(true);
+    try {
+      const payload = { ...formData, customCategoryText: isCustomOption ? formData.customCategoryText : undefined, ...(isSupport ? { supportInitiativeId: initialInitiative!.id } : {}) };
+      const fingerprint = JSON.stringify(payload);
+      if (submission.current.fingerprint !== fingerprint) submission.current = { fingerprint, id: crypto.randomUUID() };
+      await onSubmitSuccess({ ...payload, submissionId: submission.current.id });
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Не удалось отправить заявку. Попробуйте ещё раз.');
+    } finally { setIsSubmitting(false); }
   };
 
   return (
@@ -120,6 +128,9 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
+          {isSupport && <div className="application-support-context"><span>ПРИСОЕДИНИТЬСЯ К ПРОЕКТУ</span><strong>{initialInitiative!.title}</strong><p>Расскажи, чем готов помочь. Команда Совета получит отклик вместе со ссылкой на эту инициативу.</p></div>}
+          <fieldset disabled={isSubmitting} className="space-y-4">
+          <legend className="sr-only">Данные заявки</legend>
           {/* Имя */}
           <div>
             <label htmlFor="form-name" className="block text-[13px] font-medium text-[#0F1115] mb-1.5">
@@ -129,6 +140,8 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
               id="form-name"
               type="text"
               required
+              maxLength={120}
+              autoComplete="name"
               placeholder="Как тебя зовут"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -136,24 +149,7 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
             />
           </div>
 
-          {/* Чем можешь помочь? (первым вариантом: «Есть своя инициатива») */}
-          <div>
-            <label htmlFor="form-category" className="block text-[13px] font-medium text-[#0F1115] mb-1.5">
-              Чем можешь помочь?
-            </label>
-            <select
-              id="form-category"
-              value={formData.category}
-              onChange={(e) => handleCategoryChange(e.target.value)}
-              className="pervik-input pervik-select cursor-pointer font-medium"
-            >
-              {CATEGORY_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt}
-                </option>
-              ))}
-            </select>
-          </div>
+          <ParticipationSelect value={formData.category} onChange={handleCategoryChange} allowSupport={Boolean(initialInitiative)} disabled={isSubmitting} />
 
           {/* Свой текст, если выбран «Свой вариант» */}
           {isCustomOption && (
@@ -165,6 +161,7 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
                 id="custom-category-text"
                 type="text"
                 required
+                maxLength={120}
                 placeholder="Например: Звукорежиссура, проведение квиза, графический дизайн"
                 value={formData.customCategoryText || ''}
                 onChange={(e) => setFormData({ ...formData, customCategoryText: e.target.value })}
@@ -176,16 +173,26 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
           {/* Обязательный выбор из 4 областей (Мероприятия, Медиа, IT, Волонтёрство) */}
           {showAreaSelector && (
             <div className="p-3.5 bg-[#F7F8FA] rounded-[12px] border border-[#E8EAEE] space-y-2.5">
-              <label className="block text-[12px] font-semibold text-[#0F1115]">
+              <span id="help-area-label" className="block text-[12px] font-semibold text-[#0F1115]">
                 В какой области это поможет? <span className="text-[#E60023]">*</span>
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {HELP_AREAS.map((area) => {
+              </span>
+              <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-labelledby="help-area-label">
+                {HELP_AREAS.map((area, index) => {
                   const isSelected = formData.helpArea === area.id;
                   return (
                     <button
                       key={area.id}
                       type="button"
+                      role="radio"
+                      aria-checked={isSelected}
+                      tabIndex={isSelected ? 0 : -1}
+                      onKeyDown={(event) => {
+                        if (!['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+                        event.preventDefault();
+                        const next = event.key === 'Home' ? 0 : event.key === 'End' ? HELP_AREAS.length - 1 : (index + (event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1) + HELP_AREAS.length) % HELP_AREAS.length;
+                        setFormData((data) => ({ ...data, helpArea: HELP_AREAS[next].id }));
+                        event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role="radio"]')[next]?.focus();
+                      }}
                       onClick={() => setFormData({ ...formData, helpArea: area.id })}
                       className={`px-3 py-2.5 rounded-[10px] text-left text-[13px] font-medium border transition-all cursor-pointer ${
                         isSelected
@@ -212,11 +219,12 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
           {/* Описание */}
           <div>
             <label htmlFor="form-description" className="block text-[13px] font-medium text-[#0F1115] mb-1.5">
-              {isInitiativeOption ? 'Суть инициативы или идеи' : 'Коротко опиши'}
+              {isInitiativeOption ? 'Суть инициативы или идеи' : isSupport ? 'Чем ты готов помочь проекту?' : 'Коротко опиши'}
             </label>
             <textarea
               id="form-description"
               required
+              maxLength={5000}
               rows={3}
               placeholder={
                 isInitiativeOption
@@ -239,6 +247,9 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
                 id="form-phone"
                 type="tel"
                 required
+                autoComplete="tel"
+                maxLength={40}
+                title="Укажи номер телефона с кодом страны, например +7 999 000-00-00"
                 placeholder="+7 999 000-00-00"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
@@ -254,6 +265,8 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
                 id="form-email"
                 type="email"
                 required
+                autoComplete="email"
+                maxLength={160}
                 placeholder="name@example.com"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -265,15 +278,19 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
           {/* Кнопка отправки */}
           <button
             type="submit"
+            disabled={isSubmitting}
             className="w-full h-12 rounded-[10px] bg-[#E60023] hover:bg-[#CC001F] text-white font-semibold text-[15px] transition-all shadow-sm active:scale-[0.99] cursor-pointer mt-2"
           >
-            {isInitiativeOption ? 'Предложить инициативу' : 'Отправить'}
+            {isSubmitting ? 'Отправляем…' : isInitiativeOption ? 'Предложить инициативу' : 'Отправить отклик'}
           </button>
+          </fieldset>
+          {submitError && <p className="inline-error" role="alert">{submitError}</p>}
 
           {/* Примечание */}
           <p className="text-center text-[12px] text-[#6B7280] pt-1">
-            Куратор отделения свяжется с тобой в течение 3 дней
+            После рассмотрения заявки команда Совета свяжется с тобой по указанным контактам
           </p>
+          {isInitiativeOption && <p className="text-[12px] text-[#6B7280] leading-relaxed">Имя автора и описание одобренной инициативы появятся на открытой доске. Телефон и почта на главной странице не публикуются.</p>}
         </form>
       </main>
     </div>

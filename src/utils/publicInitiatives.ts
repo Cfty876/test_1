@@ -1,4 +1,5 @@
 import type { HelpArea } from '../components/ApplicationFormView.tsx';
+import { fetchApi } from './http.ts';
 
 export interface PublicInitiative {
   id: string;
@@ -10,14 +11,14 @@ export interface PublicInitiative {
 }
 
 export async function fetchPublicInitiatives(): Promise<PublicInitiative[]> {
-  const response = await fetch('/api/initiatives');
+  const response = await fetchApi('/api/initiatives', { cache: 'no-store' });
   if (!response.ok) throw new Error('Не удалось загрузить доску инициатив');
   const value: unknown = await response.json();
   return Array.isArray(value) ? value as PublicInitiative[] : [];
 }
 
 export async function publishPublicInitiative(initiative: PublicInitiative): Promise<PublicInitiative> {
-  const response = await fetch('/api/initiatives', {
+  const response = await fetchApi('/api/initiatives', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'same-origin',

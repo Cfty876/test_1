@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { CrossIcon, SendIcon, BuildingIcon } from './Icons.tsx';
 import type { ForwardedInitiative } from '../utils/auth.ts';
+import { ModalDialog } from './ModalDialog.tsx';
 
 interface SendToPartnerModalProps {
   isOpen: boolean;
@@ -18,7 +19,7 @@ interface SendToPartnerModalProps {
     partnerName: string;
     senderNote: string;
     initiative: ForwardedInitiative;
-  }) => void;
+  }) => Promise<void>;
   senderName: string;
   senderRole: string;
   partnerOptions: { name: string; specialization: string }[];
@@ -35,6 +36,8 @@ export const SendToPartnerModal: React.FC<SendToPartnerModalProps> = ({
 }) => {
   const [selectedPartner, setSelectedPartner] = useState('');
   const [note, setNote] = useState('');
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState('');
 
   if (!isOpen || !initiative) return null;
 
@@ -42,8 +45,9 @@ export const SendToPartnerModal: React.FC<SendToPartnerModalProps> = ({
     ? selectedPartner
     : partnerOptions[0]?.name ?? '';
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSending || !resolvedPartner) return;
 
     const forwarded: ForwardedInitiative = {
       id: `fwd-${Date.now()}`,
@@ -61,33 +65,25 @@ export const SendToPartnerModal: React.FC<SendToPartnerModalProps> = ({
       partnerName: resolvedPartner,
     };
 
-    onSend({
-      partnerName: resolvedPartner,
-      senderNote: note.trim(),
-      initiative: forwarded,
-    });
-
-    onClose();
+    setIsSending(true);
+    setError('');
+    try {
+      await onSend({ partnerName: resolvedPartner, senderNote: note.trim(), initiative: forwarded });
+      onClose();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Не удалось отправить инициативу');
+    } finally { setIsSending(false); }
   };
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="send-partner-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 text-left"
-    >
-      {/* Backdrop */}
-      <div
-        onClick={onClose}
-        className="fixed inset-0 bg-[#000000]/45 backdrop-blur-[6px]"
-      />
+    <ModalDialog labelledBy="send-partner-title" onClose={onClose} busy={isSending}>
 
       {/* Modal Card */}
       <div className="relative w-full max-w-[460px] bg-[#FFFFFF] rounded-[16px] border border-[#E8EAEE] p-6 sm:p-8 shadow-2xl modal-animate z-10">
         <button
           type="button"
           onClick={onClose}
+          disabled={isSending}
           aria-label="Закрыть"
           className="absolute top-5 right-5 w-8 h-8 rounded-[8px] flex items-center justify-center text-[#6B7280] hover:text-[#0F1115] hover:bg-[#F7F8FA] cursor-pointer"
         >
@@ -120,6 +116,7 @@ export const SendToPartnerModal: React.FC<SendToPartnerModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <fieldset disabled={isSending} className="space-y-4"><legend className="sr-only">Передача инициативы партнёру</legend>
           <div>
             <label htmlFor="partner-select" className="block text-[13px] font-medium text-[#0F1115] mb-1.5">
               Выберите партнёра
@@ -150,6 +147,7 @@ export const SendToPartnerModal: React.FC<SendToPartnerModalProps> = ({
             </label>
             <textarea
               id="sender-note"
+              maxLength={1000}
               rows={2}
               placeholder="Например: Просим поддержать площадкой или провести консультацию для ребят"
               value={note}
@@ -161,15 +159,17 @@ export const SendToPartnerModal: React.FC<SendToPartnerModalProps> = ({
           <div className="pt-2">
             <button
               type="submit"
-              disabled={partnerOptions.length === 0}
+              disabled={partnerOptions.length === 0 || isSending}
               className="w-full h-11 rounded-[10px] bg-[#E60023] hover:bg-[#CC001F] text-white font-semibold text-[14px] flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-[0.99]"
             >
               <SendIcon size={16} strokeWidth={2.4} />
-              <span>Отправить партнёру</span>
+              <span>{isSending ? 'Отправляем…' : 'Отправить партнёру'}</span>
             </button>
           </div>
+          </fieldset>
+          {error && <p className="inline-error" role="alert">{error}</p>}
         </form>
       </div>
-    </div>
+    </ModalDialog>
   );
 };

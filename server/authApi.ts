@@ -1,8 +1,7 @@
 import { createHmac, scryptSync, timingSafeEqual } from 'node:crypto';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import path from 'node:path';
 import { readPlatformState } from './platformStore.ts';
+import { readPublicInitiatives, savePublicInitiative } from './publicInitiativesStore.ts';
 
 type AuthEnvironment = Record<string, string | undefined>;
 type AuthRequest = IncomingMessage & { url?: string; body?: unknown };
@@ -47,7 +46,7 @@ function makeToken(payload: object, secret: string): string {
   return `${encoded}.${signature}`;
 }
 
-function readToken(token: string | undefined, secret: string): { sub: string; exp: number } | null {
+function readToken(token: string | undefined, secret: string): { sub: string; exp: number; version?: string } | null {
   if (!token) return null;
   const [encoded, providedSignature, ...extra] = token.split('.');
   if (!encoded || !providedSignature || extra.length) return null;
@@ -62,9 +61,9 @@ function readToken(token: string | undefined, secret: string): { sub: string; ex
   if (actualSignature.length !== expectedSignature.length || !timingSafeEqual(actualSignature, expectedSignature)) return null;
 
   try {
-    const payload = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8')) as { sub?: string; exp?: number };
+    const payload = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8')) as { sub?: string; exp?: number; version?: string };
     if (!payload.sub || !payload.exp || payload.exp <= Math.floor(Date.now() / 1000)) return null;
-    return { sub: payload.sub, exp: payload.exp };
+    return { sub: payload.sub, exp: payload.exp, version: payload.version };
   } catch {
     return null;
   }
@@ -82,13 +81,18 @@ export function hasAdminSession(request: IncomingMessage, env: AuthEnvironment):
   const user = getConfiguredUser(env);
   if (!username || !sessionSecret || !user || user.role !== 'admin') return false;
   const session = readToken(getCookie(request, 'movement_session'), sessionSecret);
-  return Boolean(session && session.sub === username);
+  return Boolean(session && session.sub === username && session.version === env.AUTH_PASSWORD_SALT?.trim());
 }
 
 export function getSessionSubject(request: IncomingMessage, env: AuthEnvironment): string | null {
   const secret = env.AUTH_SESSION_SECRET?.trim();
   if (!secret) return null;
   return readToken(getCookie(request, 'movement_session'), secret)?.sub ?? null;
+}
+
+export function getSessionVersion(request: IncomingMessage, env: AuthEnvironment): string | undefined {
+  const secret = env.AUTH_SESSION_SECRET?.trim();
+  return secret ? readToken(getCookie(request, 'movement_session'), secret)?.version : undefined;
 }
 
 function sendJson(response: ServerResponse, status: number, body: unknown) {
@@ -109,27 +113,11 @@ interface StoredInitiative {
 
 const INITIATIVE_AREAS = new Set(['Мероприятия', 'Медиа', 'IT', 'Волонтёрство']);
 
-async function readInitiatives(): Promise<StoredInitiative[]> {
-  const file = path.join(process.cwd(), 'data', 'public-initiatives.json');
-  try {
-    const value: unknown = JSON.parse(await readFile(file, 'utf8'));
-    return Array.isArray(value) ? value as StoredInitiative[] : [];
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
-    throw error;
-  }
-}
-
-async function writeInitiatives(initiatives: StoredInitiative[]): Promise<void> {
-  const directory = path.join(process.cwd(), 'data');
-  const file = path.join(directory, 'public-initiatives.json');
-  const temporaryFile = `${file}.tmp`;
-  await mkdir(directory, { recursive: true });
-  await writeFile(temporaryFile, JSON.stringify(initiatives, null, 2), 'utf8');
-  await rename(temporaryFile, file);
-}
-
 function readJson(request: AuthRequest): Promise<Record<string, unknown>> {
+  const objectBody = (value: unknown): Record<string, unknown> => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid request body');
+    return value as Record<string, unknown>;
+  };
   // Vercel's Node runtime parses JSON into request.body before invoking the
   // function. Local Vite middleware still needs to read the incoming stream.
   if (request.body && typeof request.body === 'object' && !Array.isArray(request.body)) {
@@ -138,11 +126,12 @@ function readJson(request: AuthRequest): Promise<Record<string, unknown>> {
   if (typeof request.body === 'string') {
     try {
       const body: unknown = JSON.parse(request.body);
-      return Promise.resolve(body && typeof body === 'object' && !Array.isArray(body) ? body as Record<string, unknown> : {});
+      return Promise.resolve(objectBody(body));
     } catch {
       return Promise.reject(new Error('Invalid request body'));
     }
   }
+  if (request.body !== undefined) return Promise.reject(new Error('Invalid request body'));
 
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
@@ -151,14 +140,13 @@ function readJson(request: AuthRequest): Promise<Record<string, unknown>> {
       totalBytes += chunk.length;
       if (totalBytes > 16_384) {
         reject(new Error('Request body too large'));
-        request.destroy();
         return;
       }
       chunks.push(chunk);
     });
     request.on('end', () => {
       try {
-        resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>);
+        resolve(objectBody(JSON.parse(Buffer.concat(chunks).toString('utf8'))));
       } catch {
         reject(new Error('Invalid request body'));
       }
@@ -172,7 +160,7 @@ export function createAuthMiddleware(env: AuthEnvironment) {
     const pathname = new URL(request.url ?? '/', 'http://localhost').pathname;
     if (pathname === '/api/initiatives' && request.method === 'GET') {
       try {
-        return sendJson(response, 200, await readInitiatives());
+        return sendJson(response, 200, await readPublicInitiatives(env));
       } catch {
         return sendJson(response, 500, { error: 'Could not load initiatives' });
       }
@@ -200,10 +188,7 @@ export function createAuthMiddleware(env: AuthEnvironment) {
         const initiative: StoredInitiative = {
           id, title, description, area: area as StoredInitiative['area'], author, publishedAt: new Date().toISOString(),
         };
-        const initiatives = await readInitiatives();
-        const updated = [initiative, ...initiatives.filter((item) => item.id !== id)];
-        await writeInitiatives(updated);
-        return sendJson(response, 201, initiative);
+        return sendJson(response, 201, await savePublicInitiative(initiative, env));
       } catch {
         return sendJson(response, 400, { error: 'Could not save initiative' });
       }
@@ -244,7 +229,7 @@ export function createAuthMiddleware(env: AuthEnvironment) {
         const actualHash = scryptSync(password, Buffer.from(account.salt, 'base64url'), expectedHash.length);
         validPassword = expectedHash.length > 0 && timingSafeEqual(actualHash, expectedHash);
         user = createSessionUser(account.login, account.name, account.role);
-      } else if (bootstrapUser && login === bootstrapUser.login) {
+      } else if (bootstrapUser && normalizedLogin === bootstrapUser.login.toLocaleLowerCase('ru-RU')) {
         const passwordHash = env.AUTH_PASSWORD_HASH?.trim() ?? '';
         const passwordSalt = env.AUTH_PASSWORD_SALT?.trim() ?? '';
         const expectedHash = Buffer.from(passwordHash, 'hex');
@@ -256,7 +241,7 @@ export function createAuthMiddleware(env: AuthEnvironment) {
       if (!user || !validPassword) return sendJson(response, 401, { error: 'Invalid credentials' });
 
       const expiresAt = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7;
-      const token = makeToken({ sub: user.login, exp: expiresAt }, sessionSecret);
+      const token = makeToken({ sub: user.login, exp: expiresAt, version: account?.salt || env.AUTH_PASSWORD_SALT?.trim() }, sessionSecret);
       const secure = env.AUTH_COOKIE_SECURE === 'true' || env.NODE_ENV === 'production';
       response.setHeader('Set-Cookie', `movement_session=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=604800${secure ? '; Secure' : ''}`);
       return sendJson(response, 200, { user });
@@ -270,8 +255,8 @@ export function createAuthMiddleware(env: AuthEnvironment) {
         const account = state.accounts.find((item) => item.login === session.sub);
         const configured = getConfiguredUser(env);
         const user = account
-          ? createSessionUser(account.login, account.name, account.role)
-          : configured?.login === session.sub ? configured : null;
+          ? session.version === account.salt ? createSessionUser(account.login, account.name, account.role) : null
+          : configured?.login === session.sub && session.version === env.AUTH_PASSWORD_SALT?.trim() ? configured : null;
         return sendJson(response, 200, { user });
       } catch {
         return sendJson(response, 503, { error: 'Platform storage is unavailable' });

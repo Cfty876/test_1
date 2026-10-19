@@ -1,9 +1,11 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { del, get, head, put } from '@vercel/blob';
+import { del, get, put } from '@vercel/blob';
+import { readBlobDocument } from './blobDocument.ts';
 import type { ApplicationItem, BaseMember, AccessUser } from '../src/components/DashboardView.tsx';
 import type { ForwardedInitiative, Role } from '../src/utils/auth.ts';
+import type { FeaturedSelection } from '../src/utils/homepage.ts';
 
 export interface StoredAccount extends Omit<AccessUser, 'password'> {
   role: Exclude<Role, 'admin'>;
@@ -16,6 +18,7 @@ export interface PlatformState {
   baseMembers: BaseMember[];
   accounts: StoredAccount[];
   forwardedInitiatives: ForwardedInitiative[];
+  featuredInitiatives: FeaturedSelection[];
 }
 
 const LEGACY_BLOB_PATH = 'pervik/private-platform-state.enc';
@@ -26,6 +29,7 @@ const EMPTY_STATE: PlatformState = {
   baseMembers: [],
   accounts: [],
   forwardedInitiatives: [],
+  featuredInitiatives: [],
 };
 
 let localQueue: Promise<void> = Promise.resolve();
@@ -69,11 +73,9 @@ function privateBlobStoreId(env: Record<string, string | undefined>): string {
 async function readBlobState(env: Record<string, string | undefined>): Promise<{ state: PlatformState; etag?: string; legacy?: boolean }> {
   const storeId = privateBlobStoreId(env);
   const pathname = privateBlobPath(env);
-  const blob = await get(pathname, { access: 'private', useCache: false, storeId });
+  const blob = await readBlobDocument(pathname, storeId, 'private');
   if (blob) {
-    // head() returns the origin ETag used by conditional Blob writes.
-    const metadata = await head(pathname, { storeId });
-    return { state: decrypt(await new Response(blob.stream).text(), env), etag: metadata.etag };
+    return { state: decrypt(blob.value, env), etag: blob.etag };
   }
 
   // Production can read the old encrypted snapshot from its former public store.
@@ -131,7 +133,7 @@ export async function readPlatformState(env: Record<string, string | undefined> 
     return stored.legacy ? migrateLegacySnapshot(stored.state, env) : stored.state;
   }
   try {
-    return decrypt(await readFile(LOCAL_PATH, 'utf8'), env);
+    return decrypt(await readFile(env.PLATFORM_DATA_DIRECTORY ? path.join(env.PLATFORM_DATA_DIRECTORY, 'platform-state.json') : LOCAL_PATH, 'utf8'), env);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return { ...EMPTY_STATE };
     throw error;
@@ -139,11 +141,12 @@ export async function readPlatformState(env: Record<string, string | undefined> 
 }
 
 async function writeLocalState(state: PlatformState, env: Record<string, string | undefined>): Promise<void> {
-  const directory = path.dirname(LOCAL_PATH);
-  const temporaryPath = `${LOCAL_PATH}.${randomUUID()}.tmp`;
+  const file = env.PLATFORM_DATA_DIRECTORY ? path.join(env.PLATFORM_DATA_DIRECTORY, 'platform-state.json') : LOCAL_PATH;
+  const directory = path.dirname(file);
+  const temporaryPath = `${file}.${randomUUID()}.tmp`;
   await mkdir(directory, { recursive: true });
   await writeFile(temporaryPath, encrypt(state, env), { encoding: 'utf8', mode: 0o600 });
-  await rename(temporaryPath, LOCAL_PATH);
+  await rename(temporaryPath, file);
 }
 
 export async function updatePlatformState<T>(update: (state: PlatformState) => { state: PlatformState; result: T }, env: Record<string, string | undefined> = process.env): Promise<T> {

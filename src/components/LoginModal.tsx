@@ -3,6 +3,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { CrossIcon } from './Icons.tsx';
 import { authenticate, type UserSession } from '../utils/auth.ts';
 import { clearRememberedPassword, loadRememberedPassword, saveRememberedPassword } from '../utils/rememberedCredentials.ts';
+import { ModalDialog } from './ModalDialog.tsx';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -45,39 +46,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [rememberMe, setRememberMe] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const passwordEdited = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (!isOpen) return;
-    const previousOverflow = document.body.style.overflow;
-    const previousHtmlOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = 'hidden';
-    document.documentElement.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.documentElement.style.overflow = previousHtmlOverflow;
-    };
-  }, [isOpen]);
-
-  // Close on Escape key
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
-  useEffect(() => {
-    if (!isOpen) return;
+    passwordEdited.current = false;
+    setError('');
+    setShowPassword(false);
     let active = true;
     void loadRememberedPassword().then((savedPassword) => {
-      if (!active || !savedPassword) return;
+      if (!active || !savedPassword || passwordEdited.current) return;
       setPassword(savedPassword);
       const passwordField = formRef.current?.elements.namedItem('password') as HTMLInputElement | null;
       if (passwordField && !passwordField.value) passwordField.value = savedPassword;
@@ -96,6 +76,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     const loginValue = String(formData.get('username') ?? login).trim();
     const passwordValue = String(formData.get('password') ?? password);
     setIsSubmitting(true);
+    setError('');
     try {
       const session = await authenticate(loginValue, passwordValue);
       if (session) {
@@ -124,10 +105,10 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         if (passwordField) passwordField.value = '';
         onClose();
       } else {
-        showToast('Неверный логин или пароль');
+        setError('Неверный логин или пароль. Проверьте введённые данные.');
       }
     } catch (error) {
-      showToast(error instanceof Error ? error.message : 'Сервер авторизации недоступен');
+      setError(error instanceof Error ? error.message : 'Сервер авторизации недоступен');
     } finally {
       setIsSubmitting(false);
     }
@@ -135,16 +116,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
 
   return (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="login-modal-title"
-      className="login-screen fixed inset-0 z-50 overflow-y-auto"
-    >
+    <ModalDialog labelledBy="login-modal-title" onClose={onClose} busy={isSubmitting} fullScreen>
       <div className="login-screen-inner">
         <button
           type="button"
           onClick={onClose}
+          disabled={isSubmitting}
           aria-label="Закрыть окно входа"
           className="login-close"
         >
@@ -176,6 +153,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               type="text"
               autoComplete="username"
               required
+              disabled={isSubmitting}
+              maxLength={80}
               autoFocus
               defaultValue={login}
               onChange={(e) => setLogin(e.target.value)}
@@ -198,8 +177,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
                 required
+                disabled={isSubmitting}
                 defaultValue={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => { passwordEdited.current = true; setPassword(e.target.value); }}
                 placeholder="Введите пароль"
                 className="pervik-input login-input"
               />
@@ -218,6 +198,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           <label className="login-remember">
             <input
               type="checkbox"
+              disabled={isSubmitting}
               checked={rememberMe}
               onChange={(event) => {
                 const shouldRemember = event.target.checked;
@@ -229,12 +210,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                     // Keep the form usable when browser storage is unavailable.
                   }
                   void clearRememberedPassword().catch(() => undefined);
-                  setLogin('');
-                  setPassword('');
-                  const loginField = formRef.current?.elements.namedItem('username') as HTMLInputElement | null;
-                  const passwordField = formRef.current?.elements.namedItem('password') as HTMLInputElement | null;
-                  if (loginField) loginField.value = '';
-                  if (passwordField) passwordField.value = '';
                 }
               }}
             />
@@ -244,6 +219,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             </span>
           </label>
 
+          {error && <p className="inline-error login-error" role="alert">{error}</p>}
           <button
             type="submit"
             disabled={isSubmitting}
@@ -262,6 +238,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
         <footer className="login-footer"><span>СОВЕТ ПЕРВЫХ · ЕКАТЕРИНБУРГ</span></footer>
       </div>
-    </div>
+    </ModalDialog>
   );
 };

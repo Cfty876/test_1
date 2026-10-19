@@ -2,6 +2,8 @@
  * Authentication and role management logic for the Movement of the First platform.
  */
 
+import { fetchApi } from './http.ts';
+
 export type Role = 'admin' | 'chairman' | 'partner';
 
 export type HelpArea = 'Мероприятия' | 'Медиа' | 'IT' | 'Волонтёрство';
@@ -90,7 +92,7 @@ export function isPartnerOnlyView(role: Role): boolean {
 
 /** Verify credentials with the server. Passwords never enter client storage. */
 export async function authenticate(loginRaw: string, passRaw: string): Promise<UserSession | null> {
-  const response = await fetch('/api/auth/login', {
+  const response = await fetchApi('/api/auth/login', {
     method: 'POST',
     credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
@@ -114,7 +116,7 @@ export async function authenticate(loginRaw: string, passRaw: string): Promise<U
 
 export async function restoreSession(): Promise<UserSession | null> {
   try {
-    const response = await fetch('/api/auth/session', { credentials: 'same-origin' });
+    const response = await fetchApi('/api/auth/session', { credentials: 'same-origin' });
     if (!response.ok) return null;
     const result = await response.json() as { user?: UserSession | null };
     return result.user ?? null;
@@ -124,7 +126,8 @@ export async function restoreSession(): Promise<UserSession | null> {
 }
 
 export async function logoutSession(): Promise<void> {
-  await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+  const response = await fetchApi('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+  if (!response.ok) throw new Error('Не удалось завершить сеанс');
 }
 
 /**

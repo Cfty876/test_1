@@ -18,6 +18,11 @@ import {
 } from './Icons.tsx';
 import type { UserSession, ForwardedInitiative } from '../utils/auth.ts';
 import { SendToPartnerModal } from './SendToPartnerModal.tsx';
+import { HomepageEditor } from './HomepageEditor.tsx';
+import { ModalDialog } from './ModalDialog.tsx';
+import { ExpandableText } from './ExpandableText.tsx';
+import type { PublicInitiative } from '../utils/publicInitiatives.ts';
+import type { FeaturedSelection } from '../utils/homepage.ts';
 
 export interface ApplicationItem {
   id: string;
@@ -33,6 +38,8 @@ export interface ApplicationItem {
   isInitiative?: boolean;
   helpArea?: string;
   area?: string;
+  supportInitiativeId?: string;
+  supportInitiativeTitle?: string;
 }
 
 export interface BaseMember {
@@ -50,6 +57,8 @@ export interface BaseMember {
   description?: string;
   author?: string;
   dateAdded?: string;
+  supportInitiativeId?: string;
+  supportInitiativeTitle?: string;
 }
 
 export interface AccessUser {
@@ -69,16 +78,23 @@ interface DashboardViewProps {
   baseMembers: BaseMember[];
   accessUsers: AccessUser[];
   forwardedInitiatives: ForwardedInitiative[];
+  publishedInitiatives: PublicInitiative[];
+  featuredInitiatives: FeaturedSelection[];
+  publicLoadError: boolean;
+  publicLoading: boolean;
+  processingApplications: string[];
+  onRetryPublicLoad: () => void;
+  onSaveFeatured: (selection: FeaturedSelection[]) => Promise<void>;
   onAcceptApplication: (id: string) => void;
   onRejectApplication: (id: string) => void;
-  onResetPassword: (user: AccessUser) => void;
-  onCreateAccess: (user: { name: string; roleInfo: string; login: string; password: string; branch: string }) => void;
+  onResetPassword: (user: AccessUser) => Promise<void>;
+  onCreateAccess: (user: { name: string; roleInfo: string; login: string; password: string; branch: string }) => Promise<void>;
   onSendInitiativeToPartner: (payload: {
     partnerName: string;
     senderNote: string;
     initiative: ForwardedInitiative;
-  }) => void;
-  onSupportInitiative: (id: string) => void;
+  }) => Promise<void>;
+  onSupportInitiative: (id: string) => Promise<void>;
   showToast: (text: string) => void;
 }
 
@@ -88,6 +104,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   baseMembers,
   accessUsers,
   forwardedInitiatives,
+  publishedInitiatives, featuredInitiatives, publicLoadError, publicLoading, processingApplications, onRetryPublicLoad, onSaveFeatured,
   onAcceptApplication,
   onRejectApplication,
   onResetPassword,
@@ -104,7 +121,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const isPartner = currentUser.role === 'partner';
   const isAdmin = currentUser.role === 'admin';
 
-  const [activeMainTab, setActiveMainTab] = useState<'applications' | 'base' | 'users' | 'partner_initiatives'>(
+  const [activeMainTab, setActiveMainTab] = useState<'applications' | 'base' | 'users' | 'partner_initiatives' | 'homepage'>(
     isPartner ? 'partner_initiatives' : isChairman ? 'base' : 'applications'
   );
 
@@ -124,6 +141,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [newUserBranch, setNewUserBranch] = useState('');
   const [newUserLogin, setNewUserLogin] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [createUserError, setCreateUserError] = useState('');
+  const [resettingUsers, setResettingUsers] = useState<string[]>([]);
+  const [supportingInitiatives, setSupportingInitiatives] = useState<string[]>([]);
 
   const generatePassword = () => {
     const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
@@ -171,7 +192,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         const matchesPhone = item.phone.toLowerCase().includes(q);
         const matchesEmail = item.email.toLowerCase().includes(q);
         const matchesBranch = (item.branch || '').toLowerCase().includes(q);
-        if (!matchesName && !matchesRole && !matchesDesc && !matchesPhone && !matchesEmail && !matchesBranch) {
+        const matchesInitiative = (item.supportInitiativeTitle || '').toLowerCase().includes(q);
+        if (!matchesName && !matchesRole && !matchesDesc && !matchesPhone && !matchesEmail && !matchesBranch && !matchesInitiative) {
           return false;
         }
       }
@@ -180,37 +202,44 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     });
   }, [baseMembers, baseSection, baseCategoryFilter, searchQuery]);
 
-  const handleCopy = (text: string, label: string) => {
+  const handleCopy = async (text: string, label: string) => {
     try {
-      navigator.clipboard.writeText(text);
+      await navigator.clipboard.writeText(text);
       showToast(`${label} скопирован`);
     } catch {
-      showToast(`Скопировано: ${text}`);
+      showToast('Не удалось скопировать. Выделите текст и скопируйте вручную.');
     }
   };
 
-  const handleCreateUserSubmit = (e: React.FormEvent) => {
+  const handleCreateUserSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newUserName.trim() || !newUserLogin.trim()) return;
+    if (isCreatingUser || !newUserName.trim() || !newUserLogin.trim()) return;
     const password = newUserPassword || generatePassword();
 
     const fullRoleInfo = newUserBranch.trim()
       ? `${newUserRole} · ${newUserBranch.trim()}`
       : newUserRole;
 
-    onCreateAccess({
-      name: newUserName.trim(),
-      roleInfo: fullRoleInfo,
-      login: newUserLogin.trim(),
-      password,
-      branch: newUserBranch.trim(),
-    });
-
-    setNewUserName('');
-    setNewUserBranch('');
-    setNewUserLogin('');
-    setNewUserPassword('');
-    setIsCreateUserModalOpen(false);
+    setIsCreatingUser(true);
+    setCreateUserError('');
+    try {
+      await onCreateAccess({
+        name: newUserName.trim(),
+        roleInfo: fullRoleInfo,
+        login: newUserLogin.trim(),
+        password,
+        branch: newUserBranch.trim(),
+      });
+      setNewUserName('');
+      setNewUserBranch('');
+      setNewUserLogin('');
+      setNewUserPassword('');
+      setIsCreateUserModalOpen(false);
+    } catch (error) {
+      setCreateUserError(error instanceof Error ? error.message : 'Не удалось создать доступ');
+    } finally {
+      setIsCreatingUser(false);
+    }
   };
 
   return (
@@ -235,12 +264,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* Horizontal Navigation Tabs */}
-        <div className="flex items-center gap-6 border-b border-[#E8EAEE] mb-8 overflow-x-auto">
+        <nav aria-label="Разделы кабинета" className="cabinet-tabs flex items-center gap-6 border-b border-[#E8EAEE] mb-8 overflow-x-auto">
           {/* Admin Tab: Заявки */}
           {isAdmin && (
             <button
               type="button"
               onClick={() => setActiveMainTab('applications')}
+              aria-current={activeMainTab === 'applications' ? 'page' : undefined}
               className={`pb-3 text-[14px] font-medium transition-colors relative cursor-pointer whitespace-nowrap ${
                 activeMainTab === 'applications'
                   ? 'text-[#0F1115] font-semibold'
@@ -264,6 +294,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <button
               type="button"
               onClick={() => setActiveMainTab('base')}
+              aria-current={activeMainTab === 'base' ? 'page' : undefined}
               className={`pb-3 text-[14px] font-medium transition-colors relative cursor-pointer whitespace-nowrap ${
                 activeMainTab === 'base'
                   ? 'text-[#0F1115] font-semibold'
@@ -285,6 +316,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <button
               type="button"
               onClick={() => setActiveMainTab('partner_initiatives')}
+              aria-current={activeMainTab === 'partner_initiatives' ? 'page' : undefined}
               className={`pb-3 text-[14px] font-medium transition-colors relative cursor-pointer whitespace-nowrap ${
                 activeMainTab === 'partner_initiatives'
                   ? 'text-[#0F1115] font-semibold'
@@ -306,6 +338,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <button
               type="button"
               onClick={() => setActiveMainTab('users')}
+              aria-current={activeMainTab === 'users' ? 'page' : undefined}
               className={`pb-3 text-[14px] font-medium transition-colors relative cursor-pointer whitespace-nowrap ${
                 activeMainTab === 'users'
                   ? 'text-[#0F1115] font-semibold'
@@ -321,7 +354,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               )}
             </button>
           )}
-        </div>
+          {(isAdmin || isChairman) && <button type="button" onClick={() => setActiveMainTab('homepage')} aria-current={activeMainTab === 'homepage' ? 'page' : undefined} className={`pb-3 text-[14px] whitespace-nowrap border-b-2 ${activeMainTab === 'homepage' ? 'border-[#E60023] text-[#E60023] font-semibold' : 'border-transparent text-[#6B7280]'}`}>Главная страница</button>}
+        </nav>
+
+        {activeMainTab === 'homepage' && (isAdmin || isChairman) && <HomepageEditor key={JSON.stringify(featuredInitiatives)} initiatives={publishedInitiatives} selections={featuredInitiatives} onSave={onSaveFeatured} loadError={publicLoadError} loading={publicLoading} onRetry={onRetryPublicLoad} />}
 
         {/* ============================================================== */}
         {/* TAB 1: Applications (Admin only)                               */}
@@ -433,9 +469,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                               </span>
                             )}
                           </div>
-                          <p className="text-[13px] text-[#4B5563] mt-1.5 leading-snug">
-                            {app.description}
-                          </p>
+                          <ExpandableText text={app.description} />
+                          {app.supportInitiativeTitle && <p className="text-[12px] text-[#E60023] mt-2">Отклик на инициативу «{app.supportInitiativeTitle}»</p>}
                           <div className="flex items-center gap-4 text-[12px] text-[#6B7280] mt-2 flex-wrap">
                             <span className="flex items-center gap-1">
                               <PhoneIcon size={12} strokeWidth={2} />
@@ -453,6 +488,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <button
                           type="button"
                           onClick={() => onRejectApplication(app.id)}
+                          disabled={processingApplications.includes(app.id)}
                           className="flex-1 md:flex-none h-9 px-3.5 rounded-[8px] bg-[#FFFFFF] hover:bg-[#F7F8FA] border border-[#E8EAEE] text-[13px] font-medium text-[#0F1115] transition-colors cursor-pointer"
                         >
                           Отклонить
@@ -460,9 +496,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <button
                           type="button"
                           onClick={() => onAcceptApplication(app.id)}
+                          disabled={processingApplications.includes(app.id)}
                           className="flex-1 md:flex-none h-9 px-4 rounded-[8px] bg-[#E60023] hover:bg-[#CC001F] text-[13px] font-semibold text-white transition-all shadow-sm active:scale-[0.99] cursor-pointer"
                         >
-                          {app.actionText}
+                          {processingApplications.includes(app.id) ? 'Сохраняем…' : app.actionText}
                         </button>
                       </div>
                     </div>
@@ -629,9 +666,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           </div>
 
                           {/* Role / Description */}
-                          <p className="text-[13px] text-[#4B5563] mt-1 leading-snug">
-                            {member.description || member.roleInfo}
-                          </p>
+                          <ExpandableText text={member.description || member.roleInfo} />
+                          {member.supportInitiativeTitle && <p className="text-[12px] text-[#E60023] mt-2">Помогает инициативе «{member.supportInitiativeTitle}»</p>}
 
                           {/* Phone and Email with quick-copy (Requirement!) */}
                           <div className="flex items-center gap-4 text-[12px] mt-2.5 flex-wrap">
@@ -696,7 +732,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* ============================================================== */}
         {activeMainTab === 'partner_initiatives' && isPartner && (
           <div className="space-y-6">
-            <div className="bg-[#F7F8FA] p-4 rounded-[12px] border border-[#E8EAEE] flex items-center justify-between">
+            <div className="partner-inbox-heading bg-[#F7F8FA] p-4 rounded-[12px] border border-[#E8EAEE] flex items-center justify-between">
               <div>
                 <h2 className="text-[16px] font-bold text-[#0F1115]">
                   Проекты и инициативы от первичных отделений
@@ -706,7 +742,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </p>
               </div>
               <span className="px-3 py-1 rounded-full bg-[#E60023] text-white text-[12px] font-bold">
-                {partnerInbox.filter((initiative) => initiative.status !== 'supported').length} активных
+                Ожидают поддержки: {partnerInbox.filter((initiative) => initiative.status !== 'supported').length}
               </span>
             </div>
 
@@ -741,16 +777,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                       <h3 className="text-[17px] font-bold text-[#0F1115] mb-1.5">
                         {fwd.title}
                       </h3>
-                      <p className="text-[14px] text-[#4B5563] leading-relaxed">
-                        {fwd.description}
-                      </p>
+                      <ExpandableText text={fwd.description} />
                     </div>
 
                     {/* Sender note if available */}
                     {fwd.senderNote && (
                       <div className="p-3 bg-[#F7F8FA] rounded-[10px] border border-[#E8EAEE] text-[13px] text-[#0F1115]">
                         <span className="font-semibold text-[#6B7280] block text-[11px] mb-0.5">
-                          Комментарий председателя:
+                          Комментарий организатора:
                         </span>
                         «{fwd.senderNote}»
                       </div>
@@ -764,7 +798,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <button
                           type="button"
                           onClick={() => handleCopy(fwd.authorPhone, 'Телефон')}
-                          className="flex items-center gap-1 text-[#0F1115] bg-[#F7F8FA] px-2.5 py-1 rounded-[6px] border border-[#E8EAEE] hover:border-[#D1D5DB] cursor-pointer"
+                          className="partner-contact flex items-center gap-1 text-[#0F1115] bg-[#F7F8FA] px-2.5 py-1 rounded-[6px] border border-[#E8EAEE] hover:border-[#D1D5DB] cursor-pointer"
                         >
                           <PhoneIcon size={12} strokeWidth={2} className="text-[#6B7280]" />
                           <span>{fwd.authorPhone}</span>
@@ -772,7 +806,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         <button
                           type="button"
                           onClick={() => handleCopy(fwd.authorEmail, 'Email')}
-                          className="flex items-center gap-1 text-[#0F1115] bg-[#F7F8FA] px-2.5 py-1 rounded-[6px] border border-[#E8EAEE] hover:border-[#D1D5DB] cursor-pointer"
+                          className="partner-contact flex items-center gap-1 text-[#0F1115] bg-[#F7F8FA] px-2.5 py-1 rounded-[6px] border border-[#E8EAEE] hover:border-[#D1D5DB] cursor-pointer"
                         >
                           <MailIcon size={12} strokeWidth={2} className="text-[#6B7280]" />
                           <span>{fwd.authorEmail}</span>
@@ -788,10 +822,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         ) : (
                           <button
                             type="button"
-                            onClick={() => onSupportInitiative(fwd.id)}
+                            disabled={supportingInitiatives.includes(fwd.id)}
+                            onClick={async () => {
+                              setSupportingInitiatives((items) => [...items, fwd.id]);
+                              try { await onSupportInitiative(fwd.id); }
+                              finally { setSupportingInitiatives((items) => items.filter((id) => id !== fwd.id)); }
+                            }}
                             className="h-9 px-4 rounded-[8px] bg-[#E60023] hover:bg-[#CC001F] text-white text-[13px] font-semibold transition-all shadow-sm active:scale-[0.99] cursor-pointer"
                           >
-                            Поддержать инициативу
+                            {supportingInitiatives.includes(fwd.id) ? 'Сохраняем…' : 'Поддержать инициативу'}
                           </button>
                         )}
                       </div>
@@ -808,7 +847,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* ============================================================== */}
         {activeMainTab === 'users' && isAdmin && (
           <div className="bg-[#FFFFFF] rounded-[16px] border border-[#E8EAEE] overflow-hidden">
-            <div className="p-5 sm:px-6 border-b border-[#E8EAEE] flex items-center justify-between">
+            <div className="users-panel-heading p-5 sm:px-6 border-b border-[#E8EAEE] flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-[16px] font-bold text-[#0F1115]">
                   Управление доступами
@@ -850,7 +889,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   key={user.id}
                   className="rounded-[14px] border border-[#E8EAEE] bg-white p-4 shadow-[0_2px_8px_rgba(15,17,21,0.035)] transition-all hover:-translate-y-0.5 hover:border-[#F0B5BF] hover:shadow-[0_8px_24px_rgba(15,17,21,0.07)]"
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="account-card-heading flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-3">
                       <div
                         className="flex h-11 w-11 flex-none items-center justify-center rounded-[12px] font-bold text-[13px] text-[#0F1115] ring-1 ring-black/5"
@@ -859,22 +898,27 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                         {user.initials}
                       </div>
                       <div className="min-w-0">
-                        <div className="truncate text-[14px] font-bold text-[#17191D]">{user.name}</div>
+                        <div className="text-[14px] font-bold text-[#17191D]">{user.name}</div>
                         <div className="mt-1 inline-flex max-w-full rounded-full bg-[#FFF0F2] px-2 py-0.5 text-[10px] font-semibold text-[#C90020]">
-                          <span className="truncate">{user.roleInfo.replace(/\s*·\s*логин:\s*\S+/i, '').trim() || 'Пользователь'}</span>
+                          <span>{user.roleInfo.split(/\s*·\s*/)[0]?.trim() || 'Пользователь'}</span>
                         </div>
                       </div>
                     </div>
                     <button
                       type="button"
-                      onClick={() => onResetPassword(user)}
+                      disabled={resettingUsers.includes(user.id)}
+                      onClick={async () => {
+                        setResettingUsers((items) => [...items, user.id]);
+                        try { await onResetPassword(user); }
+                        finally { setResettingUsers((items) => items.filter((id) => id !== user.id)); }
+                      }}
                       className="h-8 flex-none rounded-[8px] border border-[#E8EAEE] bg-white px-2.5 text-[11px] font-medium text-[#4B5563] transition-colors hover:border-[#E60023] hover:text-[#C90020]"
-                    >Сбросить пароль</button>
+                    >{resettingUsers.includes(user.id) ? 'Сохраняем…' : 'Сбросить пароль'}</button>
                   </div>
                   <div className="mt-4 grid gap-2 rounded-[10px] bg-[#F8F9FA] p-3 text-[12px] sm:grid-cols-2">
                     <div className="min-w-0">
                       <div className="text-[10px] font-semibold uppercase tracking-wide text-[#8A9099]">Логин</div>
-                      <div className="mt-0.5 truncate font-medium text-[#30343B]">{user.login}</div>
+                      <div className="mt-0.5 font-medium text-[#30343B]">{user.login}</div>
                     </div>
                     <div className="min-w-0">
                       <div className="text-[10px] font-semibold uppercase tracking-wide text-[#8A9099]">Пароль</div>
@@ -883,7 +927,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     {user.branch && (
                       <div className="min-w-0 sm:col-span-2">
                         <div className="text-[10px] font-semibold uppercase tracking-wide text-[#8A9099]">Организация</div>
-                        <div className="mt-0.5 truncate font-medium text-[#30343B]">{user.branch}</div>
+                        <div className="mt-0.5 font-medium text-[#30343B]">{user.branch}</div>
                       </div>
                     )}
                   </div>
@@ -902,13 +946,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Modal: Send Initiative to Partner */}
       <SendToPartnerModal
+        key={selectedInitiativeToSend?.id || 'closed'}
         isOpen={Boolean(selectedInitiativeToSend)}
         onClose={() => setSelectedInitiativeToSend(null)}
         initiative={
           selectedInitiativeToSend
             ? {
                 id: selectedInitiativeToSend.id,
-                title: selectedInitiativeToSend.name,
+                title: publishedInitiatives.find((item) => item.id === selectedInitiativeToSend.id.replace(/^base-/, ''))?.title || selectedInitiativeToSend.description?.split(/[.!?\n]/, 1)[0]?.slice(0, 120) || selectedInitiativeToSend.name,
                 authorName: selectedInitiativeToSend.author || selectedInitiativeToSend.name,
                 authorPhone: selectedInitiativeToSend.phone,
                 authorEmail: selectedInitiativeToSend.email,
@@ -922,34 +967,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         partnerOptions={accessUsers
           .filter((user) => user.roleInfo.includes('Партнёр'))
           .map((user) => ({ name: user.name, specialization: user.roleInfo }))}
-        onSend={(payload) => {
-          onSendInitiativeToPartner(payload);
-          setSelectedInitiativeToSend(null);
-        }}
+        onSend={onSendInitiativeToPartner}
       />
 
       {/* Modal: Create Access (Admin only) */}
       {isCreateUserModalOpen && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 text-left"
-        >
-          <div
-            onClick={() => setIsCreateUserModalOpen(false)}
-            className="fixed inset-0 bg-[#000000]/45 backdrop-blur-[6px]"
-          />
+        <ModalDialog labelledBy="create-access-title" onClose={() => setIsCreateUserModalOpen(false)} busy={isCreatingUser}>
           <div className="relative w-full max-w-[420px] bg-[#FFFFFF] rounded-[16px] border border-[#E8EAEE] p-6 sm:p-8 shadow-2xl modal-animate z-10">
             <button
               type="button"
               onClick={() => setIsCreateUserModalOpen(false)}
+              disabled={isCreatingUser}
               aria-label="Закрыть"
               className="absolute top-5 right-5 w-8 h-8 rounded-[8px] flex items-center justify-center text-[#6B7280] hover:text-[#0F1115] hover:bg-[#F7F8FA] cursor-pointer"
             >
               <CrossIcon size={18} strokeWidth={2} />
             </button>
 
-            <h3 className="text-[20px] font-bold text-[#0F1115] mb-1">
+            <h3 id="create-access-title" className="text-[20px] font-bold text-[#0F1115] mb-1">
               Создать доступ
             </h3>
             <p className="text-[13px] text-[#6B7280] mb-5">
@@ -957,14 +992,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </p>
 
             <form onSubmit={handleCreateUserSubmit} className="space-y-3.5">
+              <fieldset disabled={isCreatingUser} className="space-y-3.5"><legend className="sr-only">Новая учётная запись</legend>
               <div>
-                <label className="block text-[13px] font-medium text-[#0F1115] mb-1">
+                <label htmlFor="access-name" className="block text-[13px] font-medium text-[#0F1115] mb-1">
                   ФИО пользователя
                 </label>
                 <input
                   type="text"
                   required
                   placeholder="Сергей Васильев"
+                  id="access-name"
+                  maxLength={120}
                   value={newUserName}
                   onChange={(e) => setNewUserName(e.target.value)}
                   className="pervik-input"
@@ -972,10 +1010,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-[13px] font-medium text-[#0F1115] mb-1">
+                <label htmlFor="access-role" className="block text-[13px] font-medium text-[#0F1115] mb-1">
                   Роль
                 </label>
                 <select
+                  id="access-role"
                   value={newUserRole}
                   onChange={(e) => setNewUserRole(e.target.value)}
                   className="pervik-input pervik-select cursor-pointer"
@@ -987,12 +1026,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-[13px] font-medium text-[#0F1115] mb-1">
+                <label htmlFor="access-branch" className="block text-[13px] font-medium text-[#0F1115] mb-1">
                   Отделение или организация
                 </label>
                 <input
                   type="text"
                   placeholder="Гимназия №99"
+                  id="access-branch"
+                  maxLength={160}
                   value={newUserBranch}
                   onChange={(e) => setNewUserBranch(e.target.value)}
                   className="pervik-input"
@@ -1000,13 +1041,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
 
               <div>
-                <label className="block text-[13px] font-medium text-[#0F1115] mb-1">
+                <label htmlFor="access-login" className="block text-[13px] font-medium text-[#0F1115] mb-1">
                   Логин
                 </label>
                 <input
                   type="text"
                   required
                   placeholder="vasiliev_g99"
+                  id="access-login"
+                  maxLength={80}
+                  autoComplete="off"
                   value={newUserLogin}
                   onChange={(e) => setNewUserLogin(e.target.value)}
                   className="pervik-input"
@@ -1015,7 +1059,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
               <div>
                 <div className="mb-1 flex items-center justify-between gap-3">
-                  <label className="block text-[13px] font-medium text-[#0F1115]">Пароль</label>
+                  <label htmlFor="access-password" className="block text-[13px] font-medium text-[#0F1115]">Пароль</label>
                   <button type="button" onClick={generatePassword} className="text-[12px] font-semibold text-[#E60023] hover:underline">
                     Сгенерировать случайный
                   </button>
@@ -1024,6 +1068,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   type="text"
                   required
                   autoComplete="new-password"
+                  id="access-password"
+                  minLength={10}
                   placeholder="Нажмите «Сгенерировать случайный» или введите свой"
                   value={newUserPassword}
                   onChange={(e) => setNewUserPassword(e.target.value)}
@@ -1032,17 +1078,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 <p className="mt-1 text-[11px] text-[#6B7280]">Пароль показывается при создании и сбросе. Сохраните его: в базе хранится только защищённый хеш.</p>
               </div>
 
+              {createUserError && <p className="inline-error" role="alert">{createUserError}</p>}
               <div className="pt-2">
                 <button
                   type="submit"
+                  disabled={isCreatingUser}
                   className="w-full h-11 rounded-[10px] bg-[#E60023] hover:bg-[#CC001F] text-white font-semibold text-[14px] transition-all cursor-pointer shadow-sm"
                 >
-                  Сгенерировать доступ
+                  {isCreatingUser ? 'Создаём доступ…' : 'Создать доступ'}
                 </button>
               </div>
+              </fieldset>
             </form>
           </div>
-        </div>
+        </ModalDialog>
       )}
     </div>
   );

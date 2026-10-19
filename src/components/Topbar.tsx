@@ -40,7 +40,7 @@ export const Topbar: React.FC<TopbarProps> = ({
               onClick={onOpenLogin}
               className="topbar-login px-3.5 py-1.5 rounded-[10px] text-[14px] font-medium transition-colors cursor-pointer"
             >
-              Войти
+              {currentUser ? 'В кабинет' : 'Войти'}
             </button>
           )}
 
