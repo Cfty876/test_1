@@ -1,0 +1,45 @@
+{
+  "installedAt": "2026-10-24",
+  "scope": "this-project-only",
+  "sources": [
+    {
+      "name": "ui-ux-pro-max",
+      "repository": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill",
+      "ref": "d14efff8ed1faa4187f004f79926f428c8074ec7",
+      "path": ".claude/skills/ui-ux-pro-max",
+      "destination": ".agents/skills/ui-ux-pro-max",
+      "skillSha256": "ea087c341bfb5b23195c7302027268ede86da802554c18a5c4896a6017b439f9"
+    },
+    {
+      "name": "design-taste-frontend",
+      "repository": "https://github.com/Leonxlnx/taste-skill",
+      "ref": "6010f91a9935f1c167dfc500fb1a475681892e6b",
+      "path": "skills/taste-skill",
+      "destination": ".agents/skills/design-taste-frontend",
+      "skillSha256": "d955dae4ba8ab2d994f4bb06b4bf412a1d9875433a8597939c391f4bae91dd7a"
+    },
+    {
+      "name": "design-motion-principles",
+      "repository": "https://github.com/kylezantos/design-motion-principles",
+      "ref": "4a9ca879f24a361f4dca4174fe2da0f67b5ddee3",
+      "path": "skills/design-motion-principles",
+      "destination": ".agents/skills/design-motion-principles",
+      "skillSha256": "599f42dbf011df38f3fcaf1497533af447d91cf97443b92439455af103c25b2e"
+    },
+    {
+      "name": "21st-ui",
+      "repository": "https://github.com/21st-dev/magic-mcp",
+      "ref": "6b5299e8a83ceffa73d4fc4e148905bb3eeeeb55",
+      "path": "skills/21st-ui",
+      "destination": ".agents/skills/21st-ui",
+      "skillSha256": "851d43ba67c18ce6552e5a0462b892d3a2196cce5d1569059fc6f72fe0e78831"
+    },
+    {
+      "name": "awesome-claude-design",
+      "repository": "https://github.com/rohitg00/awesome-claude-design",
+      "ref": "7f60ee56b9340f8c2671a08c2d8aab4037546a64",
+      "path": "design-md",
+      "destination": "design/references/awesome-claude-design"
+    }
+  ]
+}

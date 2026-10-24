@@ -12,3 +12,9 @@ coverage/
 data/*.tmp
 data/public-initiatives.json
 data/platform-state.json
+
+# Local design tooling: credentials, API responses and temporary research.
+.codex/config.toml
+.design-tools-catalog.local.json
+.design-tools/
+.taste-skill/

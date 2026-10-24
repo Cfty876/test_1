@@ -1,0 +1,8 @@
+# Copy to .codex/config.toml locally and supply your own API key.
+# The real config.toml is Git-ignored. Never put a key in this example.
+[mcp_servers.twenty_first]
+url = "https://21st.dev/api/mcp"
+env_http_headers = { "x-api-key" = "API_KEY_21ST" }
+enabled_tools = ["search", "get_inspiration", "get_component", "get_usage"]
+startup_timeout_sec = 30
+tool_timeout_sec = 45
