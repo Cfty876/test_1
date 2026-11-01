@@ -117,7 +117,7 @@ test(db ? 'PostgreSQL: complete platform workflows and concurrent decisions' : '
    const hub=await req('platform/member-hub',undefined,school);assert.ok(hub.body.calendar.some((e:any)=>e.id===implementation.id&&e.startDate===dates.startDate));
   });
   await t.test('concurrent moderation cannot overbook an implementation',async()=>{
-   const ids=[];for(let i=0;i<2;i++){const result=await req('platform/applications',{...form,submissionId:randomUUID(),trackingCode:randomBytes(32).toString('hex'),category:'Хочу помочь инициативе',isInitiative:false,phone:`+7 (999) 123-45-6${i}`,email:`helper${i}@example.invalid`,supportInitiativeId:app.id,supportImplementationId:implementation.id,participationRole:'activist'},'');assert.equal(result.status,201);ids.push(result.body.id);}
+   const ids=[];for(let i=0;i<2;i++){const result=await req('platform/applications',{...form,submissionId:randomUUID(),trackingCode:randomBytes(32).toString('hex'),category:'Хочу помочь инициативе',isInitiative:false,helpArea:'Медиа',helpAreas:['Медиа','IT'],phone:`+7 (999) 123-45-6${i}`,email:`helper${i}@example.invalid`,supportInitiativeId:app.id,supportImplementationId:implementation.id,participationRole:'activist'},'');assert.equal(result.status,201);assert.deepEqual(result.body.helpAreas,['Медиа','IT']);assert.equal(result.body.area,'Медиа');ids.push(result.body.id);}
    const results=await Promise.all(ids.map(id=>req('platform/applications/status',{id,status:'accepted',version:1})));assert.deepEqual(results.map(r=>r.status).sort(),[200,409]);
   });
   await t.test('private report photos, report submission and independent confirmation',async()=>{

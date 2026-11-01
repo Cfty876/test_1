@@ -1,5 +1,7 @@
+import { DirectionPicker } from './DirectionControls.tsx';
+import { ACTIVIST_DIRECTIONS } from '../utils/participantDirections.ts';
 import type { InitiativeDirection } from '../utils/initiativeDirections.ts';
-import { INITIATIVE_DIRECTIONS, isInitiativeDirection } from '../utils/initiativeDirections.ts';
+import { isInitiativeDirection } from '../utils/initiativeDirections.ts';
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeftIcon, LightbulbIcon } from './Icons.tsx';
 import type { PublicInitiative } from '../utils/publicInitiatives.ts';
@@ -46,13 +48,6 @@ interface ApplicationFormViewProps {
   initialImplementation?: PublicImplementation | null;
 }
 
-const HELP_AREAS: { id: HelpArea; label: string; desc: string }[] = [
-  { id: 'Мероприятия', label: 'Мероприятия', desc: 'Сцена, организация, ведение, логистика' },
-  { id: 'Медиа', label: 'Медиа', desc: 'Фото, видео, репортажи, соцсети, дизайн' },
-  { id: 'IT', label: 'IT', desc: 'Разработка, боты, звук, свет, презентации' },
-  { id: 'Волонтёрство', label: 'Волонтёрство', desc: 'Навигация, регистрация, сопровождение' },
-];
-
 const DRAFT_KEY = 'pervik.application-draft.v1';
 interface FormDraft { context: string; data: ApplicationFormData; submission: { fingerprint: string; id: string; code: string } }
 function readDraft(context: string): FormDraft | null {
@@ -60,7 +55,7 @@ function readDraft(context: string): FormDraft | null {
     const draft = JSON.parse(sessionStorage.getItem(`${DRAFT_KEY}:${context}`) || 'null') as FormDraft | null;
     if (draft?.context !== context || !draft.data || !['name', 'phone', 'email', 'description', 'category'].every((key) => typeof draft.data[key as keyof ApplicationFormData] === 'string')) return null;
     if (![...PARTICIPATION_OPTIONS.map((item) => item.value), 'Хочу помочь инициативе', 'Хочу быть активистом'].includes(draft.data.category)) return null;
-    if (!HELP_AREAS.some((area) => area.id === draft.data.helpArea)) return null;
+    if (!ACTIVIST_DIRECTIONS.some((area) => area.id === draft.data.helpArea)) return null;
     return draft;
   } catch { return null; }
 }
@@ -83,7 +78,7 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
     category: initialInitiative ? 'Хочу помочь инициативе' : mode === 'initiative' ? 'Есть своя инициатива' : 'Хочу быть активистом',
     customCategoryText: '',
     helpArea: initialHelpArea,
-    helpAreas: [initialHelpArea],
+    helpAreas: !initialInitiative && mode === 'initiative' ? [initialHelpArea] : [],
     description: '',
     phone: '',
     email: '',
@@ -94,6 +89,7 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
   const [formData, setFormData] = useState<ApplicationFormData>(() => savedDraft ? { ...savedDraft.data, direction: isInitiativeDirection(new URLSearchParams(location.search).get('direction')) ? initialDirection : isInitiativeDirection(savedDraft.data.direction) ? savedDraft.data.direction : initialDirection, phone: savedDraft.data.phone ? formatRussianPhone(savedDraft.data.phone) : '' } : defaultData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [directionError, setDirectionError] = useState(false);
   const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
   useEffect(() => { setPrivacyAcknowledged(false); }, [context]);
   const submission = useRef(savedDraft?.submission || { fingerprint: '', id: '', code: '' });
@@ -111,12 +107,13 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
 
   const isCustomOption = formData.category === 'Свой вариант (указать область)';
   const isInitiativeOption = formData.category === 'Есть своя инициатива';
-  const showAreaSelector = !isSupport && !isInitiativeOption;
+  const showAreaSelector = !isInitiativeOption;
   const isActivist = !isInitiativeOption && !isSupport;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
+    if (!isInitiativeOption && !formData.helpAreas?.length) { setDirectionError(true); setSubmitError(''); document.querySelector<HTMLInputElement>('[data-direction-picker=activist] input')?.focus(); return; }
     const invalidText = !formData.name.trim() ? 'form-name' : !formData.description.trim() ? 'form-description' : '';
     if (invalidText) {
       const field = document.getElementById(invalidText) as HTMLInputElement | HTMLTextAreaElement | null;
@@ -142,7 +139,7 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
     setSubmitError('');
     setIsSubmitting(true);
     try {
-      const payload = { ...formData, direction: isInitiativeOption ? formData.direction : undefined, helpAreas: isActivist ? (formData.helpAreas?.length ? formData.helpAreas : [formData.helpArea!]) : [formData.helpArea!], customCategoryText: isCustomOption ? formData.customCategoryText : undefined, participationRole: isSupport && initialImplementation ? formData.participationRole : undefined, ...(isSupport ? { supportInitiativeId: initialInitiative!.id, ...(initialImplementation ? { supportImplementationId: initialImplementation.id } : {}) } : {}) };
+      const payload = { ...formData, direction: isInitiativeOption ? formData.direction : undefined, helpAreas: !isInitiativeOption ? (formData.helpAreas?.length ? formData.helpAreas : [formData.helpArea!]) : [formData.helpArea!], customCategoryText: isCustomOption ? formData.customCategoryText : undefined, participationRole: isSupport && initialImplementation ? formData.participationRole : undefined, ...(isSupport ? { supportInitiativeId: initialInitiative!.id, ...(initialImplementation ? { supportImplementationId: initialImplementation.id } : {}) } : {}) };
       const fingerprint = JSON.stringify(payload);
       if (submission.current.fingerprint !== fingerprint) submission.current = { fingerprint, id: crypto.randomUUID(), code: createTrackingCode() };
       try { sessionStorage.setItem(`${DRAFT_KEY}:${context}`, JSON.stringify({ context, data: formData, submission: submission.current })); } catch { /* In-memory retry remains available. */ }
@@ -234,50 +231,8 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
             </div>
           )}
 
-          {/* Темы проектов отделены от навыков активистов. */}
-          {isInitiativeOption && <fieldset className="initiative-direction-field"><legend>Направление инициативы <span aria-hidden="true">*</span></legend><p>Выбери одну тему проекта.</p><div className="initiative-direction-options">{INITIATIVE_DIRECTIONS.map(direction => <label key={direction.id} className={formData.direction === direction.id ? 'is-selected' : ''}><span><input type="radio" required name="initiative-direction" value={direction.id} checked={formData.direction === direction.id} onChange={() => setFormData(data => ({ ...data, direction: direction.id }))} /><strong>{direction.label}</strong></span><small>{direction.description}</small><p>{direction.hint}</p></label>)}</div></fieldset>}
-          {showAreaSelector && (
-            <div className="p-3.5 bg-[#F7F8FA] rounded-[12px] border border-[#E8EAEE] space-y-2.5">
-              <span id="help-area-label" className="block text-[12px] font-semibold text-[#0F1115]">
-                В каких направлениях готов помогать? <span className="text-[#E60023]">*</span>
-              </span>
-              {isActivist && <p className="journey-hint">Выбери хотя бы одно направление. Можно несколько; опыт не обязателен.</p>}
-              <div className="grid grid-cols-2 gap-2" role="group" aria-labelledby="help-area-label">
-                {HELP_AREAS.map((area) => {
-                  const isSelected = formData.helpAreas?.includes(area.id);
-                  return (
-                    <button
-                      key={area.id}
-                      type="button"
-                      role="checkbox"
-                      aria-checked={isSelected}
-                      tabIndex={0}
-                      onClick={() => setFormData(data => {
-                        const current = data.helpAreas || [data.helpArea!];
-                        const next = current.includes(area.id) ? current.filter(value => value !== area.id) : [...current, area.id];
-                        return next.length ? { ...data, helpAreas: next, helpArea: next[0] } : data;
-                      })}
-                      className={`px-3 py-2.5 rounded-[10px] text-left text-[13px] font-medium border transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-[#FFFFFF] border-[#E60023] text-[#E60023] shadow-xs'
-                          : 'bg-[#FFFFFF] border-[#E8EAEE] text-[#0F1115] hover:border-[#D1D5DB]'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold">{area.label}</span>
-                        {isSelected && (
-                          <span className="w-2 h-2 rounded-full bg-[#E60023]" />
-                        )}
-                      </div>
-                      <div className="help-area-description text-[11px] text-[#6B7280] mt-0.5 leading-tight truncate">
-                        {area.desc}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          {isInitiativeOption && <DirectionPicker kind="initiative" selected={formData.direction ? [formData.direction] : []} onChange={values => setFormData(data => ({ ...data, direction: values[0] as InitiativeDirection }))} />}
+          {showAreaSelector && <DirectionPicker kind="activist" selected={formData.helpAreas || []} error={directionError && !formData.helpAreas?.length} onChange={values => { setDirectionError(false); setFormData(data => ({ ...data, helpAreas: values as HelpArea[], helpArea: (values[0] || data.helpArea) as HelpArea })); }} />}
 
           {/* Описание */}
           <div>

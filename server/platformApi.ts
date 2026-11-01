@@ -224,7 +224,6 @@ export function createPlatformApi(env: Environment) {
         const supportId = typeof body.supportInitiativeId === 'string' ? body.supportInitiativeId : '';
         const supportedInitiative = supportId ? (await readPublishedInitiatives(env)).find((initiative) => initiative.id === supportId) : null;
         if (supportId && (!supportedInitiative || form.isInitiative)) return send(response, 400, { error: 'Инициатива для отклика не найдена. Откройте её заново на главной.' });
-        if (supportedInitiative) form.area = supportedInitiative.area;
         const implementationId = typeof body.supportImplementationId === 'string' ? body.supportImplementationId : '';
         const participationRole = body.participationRole;
         const implementation = implementationId ? supportedInitiative?.implementations?.find((item) => item.id === implementationId) : null;
