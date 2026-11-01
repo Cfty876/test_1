@@ -8,11 +8,11 @@
 .platform-shell .council-workspace :is(input[type=checkbox],input[type=radio]) { width:20px; height:20px; min-height:20px; flex-shrink:0; accent-color:#b60026; }
 .platform-shell .council-workspace :is(h1,h2,h3,p,strong,span) { overflow-wrap:anywhere; }
 .platform-shell .council-workspace :is(.school-layout,.cabinet-layout) { display:grid; grid-template-columns:232px minmax(0,1fr); width:100%; max-width:none; margin:0; align-items:start; }
-.platform-shell .council-workspace .council-sidebar { position:sticky; top:var(--topbar-height,64px); height:calc(100dvh - var(--topbar-height,64px)); display:flex; flex-direction:column; align-self:start; padding:28px 16px 20px; border-right:1px solid var(--council-line); background:#fff; color:var(--council-ink); overflow-y:auto; }
-.council-wordmark { display:grid; gap:10px; color:inherit; padding:0 12px 28px; text-decoration:none; }
+.platform-shell .council-workspace .council-sidebar { position:sticky; top:var(--topbar-height,64px); height:calc(100dvh - var(--topbar-height,64px)); min-height:0; display:flex; flex-direction:column; align-self:start; padding:24px 16px 16px; border-right:1px solid var(--council-line); background:#fff; color:var(--council-ink); }
+.council-wordmark { display:grid; flex-shrink:0; gap:10px; color:inherit; padding:0 12px 20px; text-decoration:none; }
 .council-wordmark strong { display:flex; justify-content:space-between; align-items:center; font:700 27px/1.2 var(--font-display); }
 .council-wordmark>span { font-size:13px; line-height:1.6; opacity:.8; }
-.council-sidebar nav { display:grid; gap:6px; }
+.council-sidebar nav { display:grid; align-content:start; flex:1 1 auto; min-height:0; gap:4px; margin:-4px; padding:4px; overflow-y:auto; overscroll-behavior-y:contain; scrollbar-width:thin; scrollbar-color:#b8b8b2 transparent; }
 .council-sidebar nav button { display:flex; align-items:center; gap:10px; width:100%; min-height:50px; padding:12px; border-radius:10px; text-align:left; font-size:15px; line-height:1.4; color:inherit; cursor:pointer; }
 .platform-shell .council-workspace .council-sidebar nav button { min-height:50px; }
 .council-sidebar nav button>span { flex:1; min-width:0; }
@@ -21,13 +21,12 @@
 .council-sidebar nav button:hover { background:#f3f3f0; }
 .council-sidebar nav button[aria-current] { background:#f0f0ed; color:#a80023; }
 .council-sidebar nav b { min-width:23px; padding:3px 5px; border-radius:6px; background:#ecece8; text-align:center; font:400 12px/1.4 var(--font-text); }
-.council-sidebar-footer { margin-top:auto; padding:32px 12px 0; display:grid; gap:16px; }
-.council-sidebar-footer>button { display:flex; align-items:center; gap:8px; text-align:left; font-size:13px; line-height:1.5; cursor:pointer; }
-.council-sidebar-footer>span { font-size:12px; line-height:1.6; opacity:.7; }
+.council-sidebar-footer { flex-shrink:0; padding:16px 12px 0; }
+.council-sidebar-footer>button { display:flex; align-items:center; gap:8px; min-height:44px; text-align:left; font-size:13px; line-height:1.5; cursor:pointer; }
 .platform-shell .council-workspace[data-council-tone=school] .council-sidebar { background:#df002b; border:0; color:#fff; }
 .council-workspace[data-council-tone=school] .council-sidebar nav button:hover { background:#ffffff18; }
 .council-workspace[data-council-tone=school] .council-sidebar nav button[aria-current] { background:#fff; color:#b60026; }
-.council-workspace[data-council-tone=school] .council-sidebar-footer>button { display:none; }
+.council-workspace[data-council-tone=school] .council-sidebar-footer { display:none; }
 .platform-shell .council-workspace :is(.school-main,.cabinet-content) { min-width:0; width:100%; padding:28px clamp(24px,3vw,44px) 44px; }
 .platform-shell .council-workspace .cabinet-container { width:100%; max-width:1280px; padding:0; margin:0 auto; }
 .platform-shell .council-workspace .school-main { max-width:1440px; margin:0 auto; }
@@ -188,4 +187,53 @@
 }
 @media(prefers-reduced-motion:reduce) {
   .platform-shell .council-workspace * { animation:none!important; transition:none!important; scroll-behavior:auto!important; }
+}
+
+/* Phone: a short heading, one main action and data before repeated promotion. */
+@media(max-width:600px) {
+  .platform-shell .council-workspace.school-portal .school-main { padding-top:14px; }
+  .platform-shell .council-workspace.school-portal .school-context { margin-bottom:10px; gap:10px; }
+  .platform-shell .council-workspace.school-portal .school-context>span:first-child { min-width:0; max-width:calc(100% - 90px); }
+  .platform-shell .council-workspace.school-portal .school-context .fit-text { min-width:0; font-size:13px; }
+  .platform-shell .council-workspace.school-portal .school-page-header { align-items:center; margin-bottom:16px; }
+  .platform-shell .council-workspace.school-portal .school-page-header>div { flex:1; min-width:0; }
+  .platform-shell .council-workspace.school-portal .school-page-header h1 { font-size:24px; line-height:1.3; text-wrap:wrap; }
+  .school-page-header .school-desktop-title,.school-page-header p { display:none; }
+  .school-page-header .school-mobile-title { display:inline; }
+  .platform-shell .council-workspace.school-portal .school-home-lead { gap:12px; }
+  .platform-shell .council-workspace.school-portal .school-start { padding:18px; border-radius:16px; }
+  .platform-shell .council-workspace.school-portal .school-overline { display:none; }
+  .platform-shell .council-workspace.school-portal .school-start h2 { font-size:22px; line-height:1.3; margin:0 0 10px; max-width:100%; }
+  .platform-shell .council-workspace.school-portal .school-start p { font-size:14px; line-height:1.5; margin:0; }
+  .platform-shell .council-workspace.school-portal .school-start .school-button { min-height:48px; margin-top:16px; }
+  .platform-shell .council-workspace.school-portal .school-score { padding:16px 18px; border-radius:16px; grid-template-columns:minmax(0,1fr) auto; gap:6px 12px; }
+  .platform-shell .council-workspace.school-portal .school-score-number { font-size:clamp(26px,8vw,36px); max-width:150px; overflow-wrap:anywhere; }
+  .platform-shell .council-workspace.school-portal .school-score>button { padding-top:4px; }
+  .platform-shell .council-workspace.school-portal .school-home-middle { gap:12px; margin-top:16px; }
+  .platform-shell .council-workspace.school-portal :is(.school-panel,.school-agenda-preview) { padding:16px; }
+  .platform-shell .council-workspace.school-portal .school-block-heading { margin-bottom:12px; }
+  .platform-shell .council-workspace.school-portal .school-block-heading h2 { font-size:18px; }
+  .platform-shell .council-workspace.school-portal .school-first-project { padding:0; }
+  .platform-shell .council-workspace.school-portal .school-first-project>svg { display:none; }
+  .platform-shell .council-workspace.school-portal .school-first-project h3 { font-size:16px; line-height:1.5; }
+  .platform-shell .council-workspace.school-portal .school-first-project p { font-size:14px; line-height:1.5; }
+  .platform-shell .council-workspace.school-portal .school-ideas-preview { display:none; }
+  .platform-shell .council-workspace.school-portal .school-home-footer { margin-top:16px; }
+  .platform-shell .council-workspace.school-portal .school-home-footer>button:last-child { display:none; }
+  .platform-shell .council-workspace.school-portal .school-page-footer { display:none; }
+  .platform-shell .council-workspace.school-portal .school-directory-switch { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); width:100%; padding:4px; gap:4px; margin-bottom:12px; border-radius:12px; }
+  .platform-shell .council-workspace.school-portal .school-directory-switch button { justify-content:center; gap:6px; min-width:0; min-height:48px; padding:10px 8px; font-size:14px; }
+  .platform-shell .council-workspace.school-portal .school-directory-switch svg { width:18px; height:18px; }
+  .platform-shell .council-workspace.school-portal .school-directory-tools { gap:10px; margin-bottom:16px; }
+  .platform-shell .council-workspace.school-portal .school-search { min-height:48px; padding-inline:12px; }
+  .platform-shell .council-workspace.school-portal .school-results-caption { gap:8px; align-items:baseline; flex-wrap:wrap; font-size:13px; margin-bottom:12px; }
+  .platform-shell .council-workspace.school-portal .school-results-caption p { font-size:14px; }
+  .platform-shell .council-workspace.school-portal .school-person-card { padding:16px; gap:10px; }
+  .platform-shell .council-workspace.school-portal .school-person-avatar { width:44px; height:44px; font-size:15px; }
+  .platform-shell .council-workspace.school-portal .school-person-card h2 { font-size:17px; }
+  .platform-shell .council-workspace.school-portal .school-person-open { padding-top:10px; }
+  .platform-shell .council-workspace.school-portal .school-project-intro { padding:14px; gap:8px; }
+  .platform-shell .council-workspace.school-portal .school-project-intro>svg { display:none; }
+  .platform-shell .council-workspace.school-portal .school-project-intro>button { margin-left:0; }
+  .platform-shell .council-workspace .council-bottom-nav>button>span:last-child { white-space:normal; overflow-wrap:anywhere; text-align:center; }
 }

@@ -77,9 +77,9 @@ export const Topbar: React.FC<TopbarProps> = ({
           )}
 
           {currentView === 'cabinet' && currentUser && (
-            <div className="flex items-center gap-3">
+            <div className="cabinet-account-controls flex items-center gap-3">
               {/* User Chip */}
-              <button type="button" className="profile-trigger" aria-haspopup="dialog" aria-label={`Открыть профиль: ${currentUser.name}`} onClick={()=>{setProfile(null);setProfileOpen(true);void loadProfile();}}><div className="user-chip flex items-center gap-2.5 px-3 py-1.5 rounded-[10px]">
+              <button type="button" className="profile-trigger" aria-haspopup="dialog" aria-expanded={profileOpen} aria-label={`Открыть профиль: ${currentUser.name}`} title="Мой профиль" onClick={()=>{setProfile(null);setProfileOpen(true);void loadProfile();}}><div className="user-chip flex items-center gap-2.5 px-3 py-1.5 rounded-[10px]">
                 <div className="user-chip-avatar w-7 h-7 rounded-full text-[12px] font-semibold flex items-center justify-center tracking-tight">
                   {profile&&profile.login===login&&profile.avatar?<img src={profile.avatar} alt=""/>:currentUser.initials}
                 </div>

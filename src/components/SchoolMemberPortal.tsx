@@ -1,4 +1,5 @@
 import { CouncilNavigation } from './CouncilNavigation.tsx';
+import { FitText } from './FitText.tsx';
 import '../school.css';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowDownLeft, ArrowRight, CalendarDays, Check, ChevronRight, CircleHelp, Flag, Home, Lightbulb, Radio, Trophy, Users, X } from 'lucide-react';
@@ -26,6 +27,7 @@ const PAGE_COPY: Record<Tab, { title: string; description: string }> = {
   ranking: { title: 'Твой вклад. Общий рейтинг.', description: 'Твои баллы и общий рейтинг председателей.' },
   calendar: { title: 'Календарь движения', description: 'Все события Совета и даты проведения инициатив.' },
 };
+const MOBILE_TITLES: Record<Tab, string> = { home: 'Мой кабинет', base: 'Идеи', projects: 'Мои проекты', ranking: 'Рейтинг', calendar: 'Календарь' };
 function today() { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Yekaterinburg', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); }
 function formatDate(value?: string) {
   if (!value) return 'Даты ещё не назначены';
@@ -75,8 +77,8 @@ export function SchoolMemberPortal(props: DashboardViewProps) {
     <div className="school-layout">
       <CouncilNavigation items={NAV.map(item => ({ ...item }))} active={tab} onSelect={id => select(id as Tab)} tone="school" onHelp={() => setHelpOpen(true)} />
       <div className="school-main">
-        <div className="school-context"><span><Flag size={16} aria-hidden="true" />Твоё отделение</span><span className={`school-live${liveIssue ? ' is-offline' : ''}`}><Radio size={14} aria-hidden="true" />{liveIssue ? 'Нет связи' : 'На связи'}</span></div>
-        <header className="school-page-header"><div><h1 tabIndex={-1} ref={mainTitle}>{PAGE_COPY[tab].title}</h1><p>{PAGE_COPY[tab].description}</p></div><button type="button" className="school-help-icon" aria-label="Как работать в кабинете" onClick={() => setHelpOpen(true)}><CircleHelp size={23} /></button></header>
+        <div className="school-context"><span><Flag size={16} aria-hidden="true" /><FitText text={user.branch || 'Твоё отделение'} minSize={12} /></span><span className={`school-live${liveIssue ? ' is-offline' : ''}`}><Radio size={14} aria-hidden="true" />{liveIssue ? 'Нет связи' : 'На связи'}</span></div>
+        <header className="school-page-header"><div><h1 tabIndex={-1} ref={mainTitle}><span className="school-desktop-title">{PAGE_COPY[tab].title}</span><span className="school-mobile-title">{MOBILE_TITLES[tab]}</span></h1><p>{PAGE_COPY[tab].description}</p></div><button type="button" className="school-help-icon" aria-label="Как работать в кабинете" onClick={() => setHelpOpen(true)}><CircleHelp size={23} /></button></header>
         {liveIssue && <p className="school-connection" role="alert">{liveIssue} Последние данные сохранены на экране. Повторяем подключение.</p>}
         {tab === 'home' && <>
           <div className="school-home-lead">

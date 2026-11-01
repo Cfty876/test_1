@@ -40,11 +40,11 @@ export function SchoolDirectory({ initialSection, members, initiatives, onTakeId
 
   return <section className="school-directory">
     <div className="school-directory-switch" aria-label="Идеи или участники">
-      <button type="button" aria-pressed={section === 'ideas'} onClick={() => switchSection('ideas')}><Lightbulb size={21} />Идеи для дела<span>{initiatives.length}</span></button>
-      <button type="button" aria-pressed={section === 'people'} onClick={() => switchSection('people')}><Users size={21} />Твоя будущая команда<span>{people.length}</span></button>
+      <button type="button" aria-pressed={section === 'ideas'} onClick={() => switchSection('ideas')}><Lightbulb size={21} />Идеи<span>{initiatives.length}</span></button>
+      <button type="button" aria-pressed={section === 'people'} onClick={() => switchSection('people')}><Users size={21} />Команда<span>{people.length}</span></button>
     </div>
     <div className="school-directory-tools"><label className="school-search"><Search size={21} aria-hidden="true" /><input type="search" aria-label={section === 'ideas' ? 'Найти идею' : 'Найти участника'} placeholder={section === 'ideas' ? 'Какую идею ищем?' : 'Имя, школа или направление помощи'} value={query} onChange={e => { setQuery(e.target.value); setRequestedPage(1); }} />{query && <button type="button" aria-label="Очистить поиск" onClick={() => { setQuery(''); setRequestedPage(1); }}><X size={18} /></button>}</label>
-      <DirectionFilter kind={section === 'ideas' ? 'initiative' : 'activist'} value={area} counts={directionCounts} total={section === 'ideas' ? searchedIdeas.length : searchedPeople.length} onChange={value => { setArea(value); setRequestedPage(1); }} />
+      <DirectionFilter compactOnMobile kind={section === 'ideas' ? 'initiative' : 'activist'} value={area} counts={directionCounts} total={section === 'ideas' ? searchedIdeas.length : searchedPeople.length} onChange={value => { setArea(value); setRequestedPage(1); }} />
     </div>
     <div className="school-results-caption"><p>{section === 'ideas' ? 'Идеи, которые можно провести в школе' : 'Активисты, готовые помогать'}</p><span role="status">Найдено: {total}</span></div>
     {section === 'ideas' && loadError && <p className="school-connection" role="alert">Не удалось загрузить каталог. <button type="button" onClick={onRetry}>Попробовать ещё раз</button></p>}

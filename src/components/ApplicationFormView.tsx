@@ -3,7 +3,7 @@ import { ACTIVIST_DIRECTIONS } from '../utils/participantDirections.ts';
 import type { InitiativeDirection } from '../utils/initiativeDirections.ts';
 import { isInitiativeDirection } from '../utils/initiativeDirections.ts';
 import React, { useEffect, useRef, useState } from 'react';
-import { ArrowLeftIcon, LightbulbIcon } from './Icons.tsx';
+import { ArrowLeftIcon } from './Icons.tsx';
 import type { PublicInitiative } from '../utils/publicInitiatives.ts';
 import { PARTICIPATION_OPTIONS } from './ParticipationSelect.tsx';
 import { createTrackingCode } from '../utils/applicationJourney.ts';
@@ -169,16 +169,10 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
         </button>
 
         {/* Heading */}
-        <div className="flex items-center justify-between mb-1">
+        <div className="application-form-heading">
           <h1 className="text-[24px] font-bold text-[#0F1115] tracking-tight leading-tight">
             {isInitiativeOption ? 'Предложить инициативу' : isSupport ? 'Помочь проекту' : 'Стать активистом'}
           </h1>
-          {isInitiativeOption && (
-            <span className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#FDE8EC] text-[#E60023] text-[12px] font-semibold">
-              <LightbulbIcon size={13} strokeWidth={2.4} />
-              <span>Инициатива</span>
-            </span>
-          )}
         </div>
         <p className="text-[14px] text-[#6B7280] mb-6">
           {isInitiativeOption ? 'Есть идея для города? Расскажи, что хочешь изменить и какая поддержка нужна.' : isSupport ? 'Расскажи о себе и о том, чем можешь помочь команде проекта.' : 'Выбери направления, в которых хочешь помогать. Расскажи о своих навыках — команда свяжется с тобой.'}
@@ -187,9 +181,9 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
 
         {!isSupport && <nav className="submission-switch" aria-label="Выбор формы"><a href="/?view=form&kind=initiative" aria-current={isInitiativeOption ? 'page' : undefined}>Своя инициатива</a><a href="/?view=form&kind=activist" aria-current={isActivist ? 'page' : undefined}>Я — активист</a></nav>}
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="application-form">
           {isSupport && <div className="application-support-context"><span>ПРИСОЕДИНИТЬСЯ К ПРОЕКТУ</span><strong>{initialInitiative!.title}</strong><p>{initialImplementation ? `${initialImplementation.organization} · ответственный ${initialImplementation.ownerName}` : 'Расскажи, чем готов помочь. Команда Совета получит отклик вместе со ссылкой на эту инициативу.'}</p></div>}
-          <fieldset disabled={isSubmitting} className="space-y-4">
+          <fieldset disabled={isSubmitting} className="application-form-fields">
           <legend className="sr-only">Данные заявки</legend>
           {/* Имя */}
           <div>

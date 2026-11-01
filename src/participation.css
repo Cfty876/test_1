@@ -7,6 +7,15 @@
 .platform-home .home-actions a{min-height:52px;text-decoration:none}
 .platform-home .areas-heading-row p{font-size:16px;line-height:1.6;max-width:48ch;margin-top:16px}
 .submission-switch a:focus-visible{outline:3px solid #df002b;outline-offset:4px}
+.application-form-heading{margin-bottom:10px;min-width:0}
+.platform-form-card .application-form{display:grid;gap:20px;min-width:0}
+/* Explicit gaps keep nested fieldset legends separate from the next field. */
+.platform-form-card .application-form-fields{display:flex;flex-direction:column;gap:20px;min-width:0;border:0;margin:0;padding:0}
+.application-form-fields>div{min-width:0}
+.platform-form-card .application-form-fields label[for]{display:block;font:400 14px/1.5 var(--font-text);margin-bottom:6px}
+.platform-form-card .application-form-fields .optional-contact-field>label{display:flex}
+.platform-form-card .application-form-fields .pervik-input{min-width:0;max-width:100%;font:400 16px/1.5 var(--font-text)}
+.platform-form-card .application-form-fields>button[type=submit]{height:auto;min-height:50px;padding:12px 16px;line-height:1.5;white-space:normal;box-shadow:none}
 @media(max-width:700px){.platform-home .home-actions{display:flex;flex-direction:column;align-items:stretch}.platform-home .home-actions a{width:100%;justify-content:center;font-size:15px}.platform-form-card{max-width:600px}.submission-switch a{font-size:13px}.platform-home .areas-heading-row p{font-size:14px}}
 
 .platform-home .home-actions .home-login{display:inline-flex!important;align-items:center;justify-content:center;border:1px solid #df002b;color:#bd0024;background:#fff;gap:12px}

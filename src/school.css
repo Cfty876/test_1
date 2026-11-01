@@ -36,6 +36,7 @@
 .school-portal .school-avatar{display:grid;place-items:center;flex-shrink:0;width:40px;height:40px;border-radius:12px;background:var(--school-yellow);color:var(--school-ink);font-size:16px}
 .school-portal .school-id>div{min-width:0;display:grid;gap:6px}.school-portal .school-id strong{font-size:15px;line-height:1.4;font-weight:400}.school-portal .school-id>div>span{font-size:13px;line-height:1.5}.school-portal .school-city{font-size:12px;line-height:1.5;display:block;padding:4px 8px}
 .school-portal .school-main{width:100%;min-width:0;max-width:1240px;margin:0 auto;padding:26px 32px 20px}
+.school-mobile-title{display:none}
 .school-portal .school-context{display:flex;justify-content:space-between;align-items:center;gap:16px;font-size:13px;color:var(--school-muted);margin-bottom:20px}
 .school-portal .school-context>span{display:flex;align-items:center;gap:7px}.school-portal .school-context>span>svg{flex-shrink:0}
 .school-portal .school-live{white-space:nowrap;color:#28703c}.school-portal .school-live.is-offline{color:var(--school-red-dark)}
