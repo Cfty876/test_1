@@ -1,0 +1,68 @@
+{
+  "label": "final-conditional-100",
+  "synthetic": true,
+  "origin": "http://127.0.0.1:3101",
+  "duration": 8000,
+  "results": [
+    {
+      "name": "public",
+      "concurrency": 100,
+      "requests": 19340,
+      "rps": 2415.4,
+      "p50": 37,
+      "p95": 63,
+      "p99": 131,
+      "statuses": {
+        "200": 100,
+        "304": 19240
+      },
+      "bytes": 3047900,
+      "elapsedMs": 8007
+    },
+    {
+      "name": "status",
+      "concurrency": 100,
+      "requests": 21478,
+      "rps": 2676.5,
+      "p50": 36,
+      "p95": 54,
+      "p99": 61,
+      "statuses": {
+        "200": 100,
+        "304": 21378
+      },
+      "bytes": 20000,
+      "elapsedMs": 8025
+    },
+    {
+      "name": "admin",
+      "concurrency": 100,
+      "requests": 14833,
+      "rps": 1847.2,
+      "p50": 37,
+      "p95": 63,
+      "p99": 300,
+      "statuses": {
+        "200": 100,
+        "304": 14733
+      },
+      "bytes": 14671900,
+      "elapsedMs": 8030
+    },
+    {
+      "name": "ranking",
+      "concurrency": 100,
+      "requests": 20374,
+      "rps": 2541.3,
+      "p50": 36,
+      "p95": 54,
+      "p99": 72,
+      "statuses": {
+        "200": 100,
+        "304": 20274
+      },
+      "bytes": 6863700,
+      "elapsedMs": 8017
+    }
+  ]
+}

@@ -1,11 +1,15 @@
 import React from 'react';
 import { CheckIcon } from './Icons.tsx';
+import { downloadReceipt, type ApplicationReceipt } from '../utils/applicationJourney.ts';
 
 interface SuccessViewProps {
+  kind?: 'initiative' | 'activist' | 'support';
   onGoHome: () => void;
+  onTrack: () => void;
+  receipt: ApplicationReceipt | null;
 }
 
-export const SuccessView: React.FC<SuccessViewProps> = ({ onGoHome }) => {
+export const SuccessView: React.FC<SuccessViewProps> = ({ onGoHome, onTrack, receipt, kind }) => {
   return (
     <div className="platform-success-wrap flex-1 flex flex-col justify-center items-center px-4 py-8 sm:py-12">
       <main className="platform-success-card w-full max-w-[440px] flex flex-col items-center text-center p-8 bg-[#FFFFFF] rounded-[16px] border border-[#E8EAEE] shadow-sm">
@@ -16,13 +20,15 @@ export const SuccessView: React.FC<SuccessViewProps> = ({ onGoHome }) => {
 
         {/* Title */}
         <h2 className="text-[24px] font-bold text-[#0F1115] tracking-tight mb-2">
-          Заявка отправлена
+          {receipt ? kind === 'activist' ? 'Анкета активиста отправлена' : kind === 'initiative' ? 'Инициатива отправлена' : 'Отклик отправлен' : 'Твоя заявка'}
         </h2>
 
         {/* Text */}
         <p className="text-[15px] text-[#6B7280] leading-relaxed mb-7 max-w-[340px]">
-          Мы получили твою заявку и скоро свяжемся с тобой по указанным контактам
+          {receipt ? 'Сохрани личный код: по нему можно узнать решение Совета и отправить доработку.' : 'Проверить ранее отправленную заявку можно по личному коду из подтверждения.'}
         </p>
+        {receipt && <div className="receipt-panel"><label htmlFor="receipt-code">Твой личный код</label><textarea id="receipt-code" readOnly rows={3} value={receipt.code} className="pervik-input journey-code" onFocus={(event) => event.target.select()} /><p>Не публикуй код. Он открывает управление заявкой и сохраняется в текущей вкладке. Скачай подтверждение, чтобы вернуться с другого устройства.</p><button type="button" className="journey-secondary" onClick={() => downloadReceipt(receipt)}>Скачать код и подтверждение</button></div>}
+        <button type="button" className="home-primary mb-4" onClick={onTrack}>Проверить статус</button>
 
         {/* Secondary button */}
         <button

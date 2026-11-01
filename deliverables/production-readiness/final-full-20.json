@@ -1,0 +1,64 @@
+{
+  "label": "final-full-20",
+  "synthetic": true,
+  "origin": "http://127.0.0.1:3101",
+  "duration": 8000,
+  "results": [
+    {
+      "name": "public",
+      "concurrency": 20,
+      "requests": 1606,
+      "rps": 199.9,
+      "p50": 97,
+      "p95": 148,
+      "p99": 169,
+      "statuses": {
+        "200": 1606
+      },
+      "bytes": 48772614,
+      "elapsedMs": 8033
+    },
+    {
+      "name": "status",
+      "concurrency": 20,
+      "requests": 13052,
+      "rps": 1630.9,
+      "p50": 12,
+      "p95": 19,
+      "p99": 27,
+      "statuses": {
+        "200": 13052
+      },
+      "bytes": 2610400,
+      "elapsedMs": 8003
+    },
+    {
+      "name": "admin",
+      "concurrency": 20,
+      "requests": 581,
+      "rps": 71.8,
+      "p50": 275,
+      "p95": 342,
+      "p99": 351,
+      "statuses": {
+        "200": 581
+      },
+      "bytes": 83033034,
+      "elapsedMs": 8095
+    },
+    {
+      "name": "ranking",
+      "concurrency": 20,
+      "requests": 1330,
+      "rps": 165.2,
+      "p50": 120,
+      "p95": 158,
+      "p99": 172,
+      "statuses": {
+        "200": 1330
+      },
+      "bytes": 90929440,
+      "elapsedMs": 8052
+    }
+  ]
+}

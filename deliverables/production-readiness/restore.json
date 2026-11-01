@@ -1,0 +1,23 @@
+{
+  "verified": true,
+  "sha256": "875cdb77a01cdb6aadd8c868acb1ea478f80a829883513fd565d79edbc2f679e",
+  "files": 1,
+  "collections": {
+    "maintenance": 1,
+    "maintenanceHistory": 2,
+    "privacyAcknowledgements": 3,
+    "profiles": 1,
+    "applications": 3003,
+    "baseMembers": 1002,
+    "accounts": 1002,
+    "featuredInitiatives": 3,
+    "implementations": 1001,
+    "implementationPhotos": 1,
+    "notifications": 14,
+    "initiativeLikes": 0,
+    "initiativeCovers": 1,
+    "meritClaims": 1,
+    "meritLedger": 5002,
+    "councilEvents": 1
+  }
+}

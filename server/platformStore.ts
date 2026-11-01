@@ -1,11 +1,18 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from 'node:crypto';
+import type { MemberProfile } from '../src/utils/profile.ts';
+import type { MaintenanceSettings } from '../src/utils/siteStatus.ts';
+import { assertMaintenanceWriteAllowed } from './maintenanceContext.ts';
+import type { MeritClaim, MeritEntry, CouncilEvent } from '../src/utils/memberHub.ts';
+import { isStoredApplicationCategory } from '../src/utils/participationCategories.ts';
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { del, get, put } from '@vercel/blob';
 import { readBlobDocument } from './blobDocument.ts';
+import { readRecordState, updateRecordState } from './recordStateStore.ts';
 import type { ApplicationItem, BaseMember, AccessUser } from '../src/components/DashboardView.tsx';
-import type { ForwardedInitiative, Role } from '../src/utils/auth.ts';
+import type { Role } from '../src/utils/auth.ts';
 import type { FeaturedSelection } from '../src/utils/homepage.ts';
+import type { Implementation, ImplementationPhoto, PlatformNotification } from '../src/utils/implementations.ts';
 
 export interface StoredAccount extends Omit<AccessUser, 'password'> {
   role: Exclude<Role, 'admin'>;
@@ -13,23 +20,43 @@ export interface StoredAccount extends Omit<AccessUser, 'password'> {
   passwordHash: string;
 }
 
+export interface StoredApplication extends ApplicationItem {
+  trackingCodeHash?: string;
+  privacyAcknowledgement?: { version: string; at: string };
+}
+
 export interface PlatformState {
-  applications: ApplicationItem[];
+  maintenance: MaintenanceSettings[];
+  maintenanceHistory: { enabled: boolean; at: string; version: number }[];
+  privacyAcknowledgements: { login: string; version: string; at: string }[];
+  profiles: MemberProfile[];
+  applications: StoredApplication[];
   baseMembers: BaseMember[];
   accounts: StoredAccount[];
-  forwardedInitiatives: ForwardedInitiative[];
   featuredInitiatives: FeaturedSelection[];
+  implementations: Implementation[];
+  implementationPhotos: ImplementationPhoto[];
+  notifications: PlatformNotification[];
+  initiativeCovers: { initiativeId: string; coverId: string; version: number }[];
+  meritClaims: MeritClaim[];
+  meritLedger: MeritEntry[];
+  councilEvents: CouncilEvent[];
+  initiativeLikes: { initiativeId: string; voterHash: string }[];
 }
 
 const LEGACY_BLOB_PATH = 'pervik/private-platform-state.enc';
 const LOCAL_PATH = path.join(process.cwd(), 'data', 'platform-state.json');
 const MAX_BLOB_WRITE_ATTEMPTS = 6;
 const EMPTY_STATE: PlatformState = {
+  maintenance: [],
+  maintenanceHistory: [],
+  privacyAcknowledgements: [],
+  profiles: [],
   applications: [],
   baseMembers: [],
   accounts: [],
-  forwardedInitiatives: [],
   featuredInitiatives: [],
+  implementations: [], implementationPhotos: [], notifications: [], initiativeLikes: [], initiativeCovers: [], meritClaims: [], meritLedger: [], councilEvents: [],
 };
 
 let localQueue: Promise<void> = Promise.resolve();
@@ -40,22 +67,53 @@ function encryptionKey(env: Record<string, string | undefined>): Buffer {
   return createHash('sha256').update('pervik-platform-state-v1\0').update(secret).digest();
 }
 
-function encrypt(state: PlatformState, env: Record<string, string | undefined>): string {
+function encrypt(state: unknown, env: Record<string, string | undefined>): string {
   const iv = randomBytes(12);
   const cipher = createCipheriv('aes-256-gcm', encryptionKey(env), iv);
   const ciphertext = Buffer.concat([cipher.update(JSON.stringify(state), 'utf8'), cipher.final()]);
   return JSON.stringify({ version: 1, iv: iv.toString('base64url'), tag: cipher.getAuthTag().toString('base64url'), data: ciphertext.toString('base64url') });
 }
 
-function decrypt(value: string, env: Record<string, string | undefined>): PlatformState {
+function decryptValue(value: string, env: Record<string, string | undefined>): unknown {
   const envelope = JSON.parse(value) as { version?: number; iv?: string; tag?: string; data?: string };
   if (envelope.version !== 1 || !envelope.iv || !envelope.tag || !envelope.data) throw new Error('Invalid platform state envelope');
   const decipher = createDecipheriv('aes-256-gcm', encryptionKey(env), Buffer.from(envelope.iv, 'base64url'));
   decipher.setAuthTag(Buffer.from(envelope.tag, 'base64url'));
   const plaintext = Buffer.concat([decipher.update(Buffer.from(envelope.data, 'base64url')), decipher.final()]).toString('utf8');
-  const state: unknown = JSON.parse(plaintext);
+  return JSON.parse(plaintext);
+}
+function decrypt(value: string, env: Record<string, string | undefined>): PlatformState {
+  const state = decryptValue(value, env);
   if (!state || typeof state !== 'object') throw new Error('Invalid platform state');
-  return { ...EMPTY_STATE, ...(state as Partial<PlatformState>) };
+  const merged = { ...EMPTY_STATE, ...(state as Partial<PlatformState>) };
+  // Project onto the current schema: retired data and roles cannot restore a session.
+  const current = Object.fromEntries(Object.keys(EMPTY_STATE).map(key => [key, merged[key as keyof PlatformState]])) as unknown as PlatformState;
+  return {
+    ...current,
+    accounts: current.accounts.filter(account => account.role === 'chairman'),
+    applications: current.applications.filter(item => isStoredApplicationCategory(item.category)),
+    baseMembers: current.baseMembers.filter(item => ['Мероприятия', 'Медиа', 'IT', 'Волонтёрство'].includes(item.category)),
+  };
+}
+
+function databaseCodec(env: Record<string, string | undefined>) {
+  const key = encryptionKey(env);
+  return {
+    scope: createHash('sha256').update(key).digest('hex'),
+    encode: (value: unknown) => encrypt(value, env),
+    decode: (value: string) => decryptValue(value, env),
+    decodeLegacy: (value: string) => decrypt(value, env) as unknown as Record<string,unknown[]>,
+    key: (collection: string, value: unknown) => {
+      const item = value as Record<string,unknown>;
+      const identity = collection === 'maintenance' ? 'singleton'
+        : collection === 'maintenanceHistory' ? String(item.version)
+        : ['profiles','privacyAcknowledgements'].includes(collection) ? item.login
+        : ['featuredInitiatives','initiativeCovers'].includes(collection) ? item.initiativeId
+        : collection === 'initiativeLikes' ? `${item.initiativeId}\0${item.voterHash}` : item.id;
+      if (typeof identity !== 'string' || !identity || identity === 'undefined') throw new Error(`Missing state identity in ${collection}`);
+      return createHmac('sha256',key).update(`${collection}\0${identity}`).digest('hex');
+    },
+  };
 }
 
 function privateBlobPath(env: Record<string, string | undefined>): string {
@@ -128,6 +186,9 @@ async function migrateLegacySnapshot(state: PlatformState, env: Record<string, s
 }
 
 export async function readPlatformState(env: Record<string, string | undefined> = process.env): Promise<PlatformState> {
+  if (env.DATABASE_URL?.trim()) {
+    return await readRecordState(env, EMPTY_STATE as unknown as Record<string,unknown[]>, databaseCodec(env)) as unknown as PlatformState;
+  }
   if (env.VERCEL === '1') {
     const stored = await readBlobState(env);
     return stored.legacy ? migrateLegacySnapshot(stored.state, env) : stored.state;
@@ -150,12 +211,19 @@ async function writeLocalState(state: PlatformState, env: Record<string, string 
 }
 
 export async function updatePlatformState<T>(update: (state: PlatformState) => { state: PlatformState; result: T }, env: Record<string, string | undefined> = process.env): Promise<T> {
+  if (env.DATABASE_URL?.trim()) return updateRecordState(env, EMPTY_STATE as unknown as Record<string,unknown[]>, databaseCodec(env), snapshot => {
+    const current = snapshot as unknown as PlatformState;
+    assertMaintenanceWriteAllowed(current);
+    const next = update(current);
+    return { state: next.state as unknown as Record<string,unknown[]>, result: next.result };
+  });
   if (env.VERCEL === '1') {
     // Compare-and-swap retries prevent concurrent Function requests from silently
     // overwriting each other's application or account updates.
     const storeId = privateBlobStoreId(env);
     for (let attempt = 0; attempt < MAX_BLOB_WRITE_ATTEMPTS; attempt += 1) {
       const current = await readBlobState(env);
+      assertMaintenanceWriteAllowed(current.state);
       const updated = update(current.state);
       try {
         await put(privateBlobPath(env), encrypt(updated.state, env), {
@@ -180,7 +248,9 @@ export async function updatePlatformState<T>(update: (state: PlatformState) => {
   }
 
   const task = localQueue.then(async () => {
-    const updated = update(await readPlatformState(env));
+    const current = await readPlatformState(env);
+    assertMaintenanceWriteAllowed(current);
+    const updated = update(current);
     await writeLocalState(updated.state, env);
     return updated.result;
   });

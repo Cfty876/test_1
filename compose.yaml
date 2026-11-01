@@ -1,0 +1,45 @@
+name: pervik
+services:
+  database:
+    image: postgres:17-bookworm@sha256:839fbb5a4942a7758dd93e18b42ea5649807491a0545b5eeeb8f0b8bb11857a5
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pervik
+      POSTGRES_USER: pervik
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run npm run db:setup first}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-54329}:5432"
+    volumes:
+      - pervik_postgres:/var/lib/postgresql/data
+      - ./docker/schema.sql:/docker-entrypoint-initdb.d/001-platform.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pervik -d pervik"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    stop_grace_period: 30s
+  app:
+    profiles: [app]
+    build: .
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 30s
+    mem_limit: 1g
+    cpus: 2
+    env_file: .env.docker-app.local
+    environment:
+      DATABASE_URL: postgresql://pervik:${POSTGRES_PASSWORD}@database:5432/pervik
+      AUTH_COOKIE_SECURE: 'false'
+    ports:
+      - '127.0.0.1:3001:3000'
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/readyz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+volumes:
+  pervik_postgres:

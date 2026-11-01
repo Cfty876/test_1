@@ -2,11 +2,13 @@ import { randomUUID } from 'node:crypto';
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { del, put } from '@vercel/blob';
+import { readDatabaseDocument, updateDatabaseDocument } from './database.ts';
 import { readBlobDocument } from './blobDocument.ts';
 import type { PublicInitiative } from '../src/utils/publicInitiatives.ts';
 
 type Environment = Record<string, string | undefined>;
 const LEGACY_KEY = 'pervik/public-initiatives.json';
+const parsedBoards = new Map<string, { payload: string | null; initiatives: PublicInitiative[] }>();
 let localQueue: Promise<void> = Promise.resolve();
 
 function storeId(env: Environment): string {
@@ -29,6 +31,16 @@ async function readBlob(key: string, env: Environment) {
 }
 
 async function readStore(env: Environment) {
+  if (env.DATABASE_URL?.trim()) {
+    const payload = await readDatabaseDocument('public-initiatives', env);
+    const previous = parsedBoards.get(env.DATABASE_URL);
+    if (previous && previous.payload === payload) return { initiatives: previous.initiatives, etag: undefined, legacy: false };
+    const initiatives: unknown = payload ? JSON.parse(payload) : [];
+    if (!Array.isArray(initiatives)) throw new Error('Invalid initiative board');
+    parsedBoards.set(env.DATABASE_URL, { payload, initiatives: initiatives as PublicInitiative[] });
+    while (parsedBoards.size > 4) parsedBoards.delete(parsedBoards.keys().next().value!);
+    return { initiatives: initiatives as PublicInitiative[], etag: undefined, legacy: false };
+  }
   if (env.VERCEL !== '1') {
     try {
       const value: unknown = JSON.parse(await readFile(path.join(env.PLATFORM_DATA_DIRECTORY || path.join(process.cwd(), 'data'), 'public-initiatives.json'), 'utf8'));
@@ -50,6 +62,11 @@ export async function readPublicInitiatives(env: Environment = process.env): Pro
 }
 
 export async function savePublicInitiative(initiative: PublicInitiative, env: Environment = process.env): Promise<PublicInitiative> {
+  if (env.DATABASE_URL?.trim()) return updateDatabaseDocument('public-initiatives', '[]', payload => {
+    const current = JSON.parse(payload) as PublicInitiative[];
+    const saved = { ...initiative, publishedAt: current.find(item => item.id === initiative.id)?.publishedAt || initiative.publishedAt };
+    return { payload: JSON.stringify([saved, ...current.filter(item => item.id !== saved.id)]), result: saved };
+  }, env);
   const write = async () => {
     for (let attempt = 0; attempt < 6; attempt += 1) {
       const current = await readStore(env);

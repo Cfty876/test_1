@@ -13,8 +13,15 @@ data/*.tmp
 data/public-initiatives.json
 data/platform-state.json
 
+.vercel
+.env*
+
 # Local design tooling: credentials, API responses and temporary research.
 .codex/config.toml
 .design-tools-catalog.local.json
 .design-tools/
 .taste-skill/
+
+# Database recovery copies and uploaded private report files
+data/backups/
+data/implementation-photos/

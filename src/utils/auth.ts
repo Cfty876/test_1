@@ -1,10 +1,12 @@
+import { PRIVACY_VERSION } from './legal.ts';
 /**
  * Authentication and role management logic for the Movement of the First platform.
  */
 
 import { fetchApi } from './http.ts';
+import type { CouncilStatus } from './implementations.ts';
 
-export type Role = 'admin' | 'chairman' | 'partner';
+export type Role = 'admin' | 'chairman';
 
 export type HelpArea = 'Мероприятия' | 'Медиа' | 'IT' | 'Волонтёрство';
 
@@ -16,6 +18,9 @@ export interface UserSession {
   roleBadge: string;
   pageTitle: string;
   pageSubtitle: string;
+  branch?: string;
+  councilStatus?: CouncilStatus;
+  canReviewApplications?: boolean;
 }
 
 export interface CredentialConfig {
@@ -25,23 +30,6 @@ export interface CredentialConfig {
   roleBadge: string;
   pageTitle: string;
   pageSubtitle: string;
-}
-
-export interface ForwardedInitiative {
-  id: string;
-  title: string;
-  authorName: string;
-  authorPhone: string;
-  authorEmail: string;
-  area: HelpArea | string;
-  description: string;
-  senderName: string;
-  senderRole: string;
-  senderNote?: string;
-  sentDate: string;
-  status: 'new' | 'reviewed' | 'supported';
-  partnerName: string;
-  partnerId?: string;
 }
 
 export const ROLE_CONFIGS: Record<Role, CredentialConfig> = {
@@ -59,54 +47,40 @@ export const ROLE_CONFIGS: Record<Role, CredentialConfig> = {
     initials: 'П',
     roleBadge: 'Председатель отделения',
     pageTitle: 'Моё отделение',
-    pageSubtitle: 'База активистов, инициативы и отправка проектов партнёрам',
-  },
-  partner: {
-    role: 'partner',
-    name: 'Партнёр',
-    initials: 'ПТ',
-    roleBadge: 'Партнёр',
-    pageTitle: 'Инициативы для партнёра',
-    pageSubtitle: 'Проекты и запросы на поддержку от отделений и кураторов',
+    pageSubtitle: 'База активистов и реализация инициатив',
   },
 };
 
 /**
  * Role permissions helpers
  */
-export function canProcessApplications(role: Role): boolean {
-  return role === 'admin';
+export function canProcessApplications(role: Role, canReviewApplications = false): boolean {
+  return role === 'admin' || (role === 'chairman' && canReviewApplications);
 }
 
 export function canViewBase(role: Role): boolean {
   return role === 'admin' || role === 'chairman';
 }
 
-export function canSendInitiativesToPartner(role: Role): boolean {
-  return role === 'admin' || role === 'chairman';
-}
-
-export function isPartnerOnlyView(role: Role): boolean {
-  return role === 'partner';
-}
-
 /** Verify credentials with the server. Passwords never enter client storage. */
-export async function authenticate(loginRaw: string, passRaw: string): Promise<UserSession | null> {
+export async function authenticate(loginRaw: string, passRaw: string, privacyAcknowledged = false): Promise<UserSession | null> {
   const response = await fetchApi('/api/auth/login', {
     method: 'POST',
     credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ login: loginRaw, password: passRaw }),
+    body: JSON.stringify({ login: loginRaw, password: passRaw, privacyAcknowledged, privacyVersion: PRIVACY_VERSION }),
   });
 
   if (response.status === 401) return null;
   if (!response.ok) {
-    const result = await response.json().catch(() => null) as { error?: string } | null;
+    const result = await response.json().catch(() => null) as { error?: string; code?: string } | null;
+    if (response.status === 400 && result?.error) throw new Error(result.error);
+    if (response.status === 503 && result?.code === 'MAINTENANCE_MODE') throw new Error('Вход для участников временно закрыт: на платформе идут технические работы.');
     if (response.status === 503 && result?.error === 'Authentication is not configured') {
       throw new Error('Авторизация не настроена в переменных окружения проекта Vercel.');
     }
-    if (response.status === 503 && result?.error === 'Platform storage is not configured') {
-      throw new Error('Не подключено хранилище платформы. Проверьте Vercel Blob и BLOB_READ_WRITE_TOKEN.');
+    if (response.status === 503 && (result?.code === 'PLATFORM_STORAGE_UNAVAILABLE' || result?.error === 'Platform storage is not configured')) {
+      throw new Error('Хранилище платформы временно недоступно. Обратитесь к администратору для проверки доступа и лимитов хранилища.');
     }
     throw new Error('Сервер авторизации недоступен. Попробуйте позже.');
   }

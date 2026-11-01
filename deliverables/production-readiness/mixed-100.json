@@ -1,0 +1,19 @@
+{
+  "clients": 100,
+  "duration": 20000,
+  "elapsedMs": 20824,
+  "requests": 4017,
+  "rps": 192.9,
+  "p50": 487,
+  "p95": 1165,
+  "p99": 1297,
+  "statuses": {
+    "200": 2635,
+    "304": 1382
+  },
+  "writeStatuses": {
+    "201": 18
+  },
+  "compressedBytes": 52077182,
+  "synthetic": true
+}

@@ -1,0 +1,67 @@
+.maintenance-shell { min-height:100dvh; background:#fafaf8; color:#25262b; }
+.maintenance-brand { display:flex; align-items:center; gap:20px; width:min(1120px,calc(100% - 48px)); margin:0 auto; padding:24px 0; border-bottom:1px solid #e6e6e1; }
+.maintenance-brand img { width:112px; height:56px; object-fit:contain; }
+.maintenance-brand>span { color:#686872; font-size:14px; }
+.maintenance-page { width:min(640px,calc(100% - 40px)); margin:auto; padding:56px 0; text-align:center; }
+.maintenance-mark { width:96px; height:96px; display:grid; place-items:center; margin:0 auto 28px; border-radius:24px; background:#df002b; color:#fff; }
+.maintenance-caption { display:block; margin-bottom:16px; font-size:14px; color:#a00020; }
+.platform-shell .maintenance-page h1 { font:700 clamp(29px,4vw,46px)/1.25 var(--font-display); letter-spacing:-.02em; margin:0 0 24px; }
+.maintenance-page>p { font:400 17px/1.8 var(--font-text); color:#60616a; white-space:pre-wrap; overflow-wrap:anywhere; }
+.maintenance-reassurance { display:flex; align-items:flex-start; gap:12px; padding:20px; margin:28px 0 16px; text-align:left; border:1px solid #e2e2dc; border-radius:14px; background:#fff; color:#62636c; font-size:14px; line-height:1.7; }
+.maintenance-reassurance svg { flex-shrink:0; margin-top:3px; color:#65666b; }
+.maintenance-retry { display:inline-flex; align-items:center; gap:10px; min-height:48px; padding:12px 18px; font-size:15px; cursor:pointer; }
+.maintenance-retry:hover { background:#efefec; border-radius:10px; }
+.maintenance-footer { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; width:min(1120px,calc(100% - 48px)); padding:20px 0; margin:0 auto; color:#686872; font-size:13px; }
+.maintenance-footer button { display:flex; align-items:center; gap:10px; min-height:44px; cursor:pointer; }
+.maintenance-shell :is(button,a):focus-visible { outline:3px solid #b00024; outline-offset:4px; }
+.maintenance-admin-banner { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:12px 24px; background:#fff4cf; color:#574314; font:400 14px/1.6 var(--font-text); border-bottom:1px solid #dfcf96; }
+.maintenance-admin-banner>span { flex:1 1 400px; }
+.maintenance-admin-banner a { display:inline-flex; align-items:center; gap:8px; min-height:44px; color:inherit; text-decoration:underline; text-underline-offset:3px; }
+.maintenance-control { display:flex; align-items:center; flex-wrap:wrap; gap:14px; padding:16px 20px; border:1px solid #deded7; border-radius:12px; background:#fff; margin-bottom:24px; color:#292a30; }
+.maintenance-control.is-active { background:#fff9e8; border-color:#e0ce93; }
+.maintenance-control-icon { display:grid; place-items:center; width:36px; height:36px; color:#686970; }
+.maintenance-control>div { flex:1 1 240px; display:grid; gap:4px; }
+.maintenance-control>div>strong { font-size:15px; line-height:1.5; font-weight:400; }
+.maintenance-control>div>span { font-size:12px; line-height:1.6; color:#696971; }
+.maintenance-control>button { display:flex; align-items:center; gap:10px; min-height:44px; padding:10px 14px; border:1px solid #d7d7d1; border-radius:9px; font-size:14px; cursor:pointer; }
+.maintenance-control>button:hover { background:#f4f4f0; }
+.maintenance-control-dialog .workflow-dialog { width:min(100%,680px); max-height:calc(100dvh - 32px); overflow-y:auto; background:#fff; border-radius:16px; }
+.maintenance-control-status { display:flex; align-items:flex-start; gap:12px; margin:12px 0 24px; padding:16px; background:#f4f4f0; border-radius:10px; }
+.maintenance-control-status svg { flex-shrink:0; margin-top:4px; color:#686970; }
+.maintenance-control-status p { font-size:14px; line-height:1.7; }
+.maintenance-control-dialog fieldset { display:grid; gap:12px; min-width:0; }
+.maintenance-control-dialog label { font-size:15px; line-height:1.5; }
+.maintenance-control-dialog textarea { width:100%; min-width:0; resize:vertical; font-size:16px; }
+.maintenance-preview { display:grid; gap:12px; padding:20px; margin:8px 0; border:1px solid #e2e2db; border-radius:12px; text-align:center; }
+.maintenance-preview>span { font-size:12px; color:#6c6c74; }
+.maintenance-preview>strong { font:700 20px/1.4 var(--font-display); }
+.maintenance-preview p { white-space:pre-wrap; overflow-wrap:anywhere; font-size:14px; line-height:1.7; color:#63636b; }
+.maintenance-confirm { padding:18px; background:#fff5df; border:1px solid #e6cc91; border-radius:12px; }
+.platform-shell .maintenance-confirm h3 { font-size:19px; margin-bottom:12px; }
+.maintenance-confirm p { font-size:14px; line-height:1.7; color:#5a5038; }
+.maintenance-confirm label { display:flex; align-items:flex-start; gap:12px; min-height:44px; margin-top:18px; font-size:14px; line-height:1.6; cursor:pointer; }
+.maintenance-confirm input { flex:0 0 20px; min-height:20px; width:20px; height:20px; margin-top:2px; accent-color:#b60026; }
+.maintenance-actions { display:grid; gap:10px; margin-top:12px; }
+.maintenance-actions>button { justify-content:center; min-height:50px; width:100%; }
+.maintenance-saved { display:flex; align-items:flex-start; gap:10px; margin-top:18px; padding:16px; border-radius:10px; background:#eef6ef; color:#285337; font-size:14px; line-height:1.7; }
+.maintenance-saved>svg { flex-shrink:0; margin-top:3px; }
+.maintenance-history { margin-top:24px; border-top:1px solid #e3e3dd; font-size:14px; }
+.maintenance-history summary { min-height:48px; padding:14px 0; cursor:pointer; }
+.maintenance-history ol { padding:0; list-style:none; }
+.maintenance-history li { display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; padding:12px 0; border-top:1px solid #eeeeea; }
+.maintenance-history time { font-size:12px; color:#6a6a74; }
+@media(max-width:600px) {
+  .maintenance-brand,.maintenance-footer { width:calc(100% - 32px); gap:12px; padding-block:16px; }
+  .maintenance-brand img { width:92px; height:46px; }
+  .maintenance-brand>span { font-size:12px; }
+  .maintenance-page { width:calc(100% - 40px); padding:36px 0; }
+  .maintenance-mark { width:80px; height:80px; border-radius:20px; margin-bottom:24px; }
+  .maintenance-page>p { font-size:16px; line-height:1.75; }
+  .maintenance-reassurance { padding:16px; font-size:13px; margin-top:24px; }
+  .maintenance-footer { padding-bottom:max(20px,env(safe-area-inset-bottom,0px)); font-size:12px; }
+  .maintenance-admin-banner { padding:12px 16px; font-size:13px; }
+  .maintenance-control { padding:16px; gap:10px; }
+  .maintenance-control>div { flex-basis:calc(100% - 50px); }
+  .maintenance-control>button { width:100%; justify-content:space-between; }
+  .maintenance-control-dialog .workflow-dialog { padding:20px; max-height:calc(100dvh - 32px); }
+}

@@ -1,0 +1,5 @@
+.fit-text{display:block!important;width:100%;max-width:100%;min-width:0;white-space:nowrap!important;overflow:hidden;overflow-wrap:normal!important;text-overflow:ellipsis;line-height:1.5;letter-spacing:inherit}
+.platform-topbar .user-chip{min-width:0;flex-shrink:1}
+.platform-topbar .user-chip>div:last-child{min-width:0;flex:1}
+.platform-topbar .user-chip-avatar{flex-shrink:0}
+.platform-topbar .user-chip .fit-text{line-height:1.4}

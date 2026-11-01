@@ -11,28 +11,36 @@
     "setup:admin": "node scripts/setup-admin.mjs",
     "build": "vite build",
     "preview": "vite preview",
-    "clean": "rm -rf dist server.js",
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
     "lint": "tsc --noEmit",
     "design:dev": "vite --config design/prototype/vite.config.mjs",
     "design:build": "vite build --config design/prototype/vite.config.mjs",
-    "design:preview": "vite preview --config design/prototype/vite.config.mjs"
+    "design:preview": "vite preview --config design/prototype/vite.config.mjs",
+    "db:setup": "node scripts/database-setup.mjs",
+    "db:up": "docker compose --env-file .env.docker.local up -d --wait",
+    "db:stop": "docker compose --env-file .env.docker.local stop",
+    "db:import": "node --import tsx scripts/database-import.ts",
+    "db:backup": "node scripts/database-backup.mjs",
+    "db:status": "docker compose --env-file .env.docker.local ps",
+    "start": "node server/start.ts",
+    "db:inspect": "node --import tsx scripts/database-status.ts",
+    "docker:up": "docker compose --env-file .env.docker.local --profile app up -d --build --wait",
+    "test:server": "node --import tsx --test server/*.test.ts src/utils/auth.test.ts"
   },
   "dependencies": {
-    "@google/genai": "^2.4.0",
-    "@tailwindcss/vite": "^4.3.3",
     "@vercel/blob": "^2.8.2",
-    "@vitejs/plugin-react": "^6.1.1",
     "dotenv": "^17.2.3",
     "express": "^4.21.2",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
+    "pg": "^8.23.1",
     "react": "^19.0.1",
-    "react-dom": "^19.0.1",
-    "vite": "^8.3.0"
+    "react-dom": "^19.0.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^22.14.0",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.4.21",
@@ -40,6 +48,15 @@
     "framer-motion": "^12.43.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.21.0",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vite": "^8.3.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@vitejs/plugin-react": "^6.1.1"
+  },
+  "overrides": {
+    "@vercel/cli-config": {
+      "zod": "^4.6.6"
+    },
+    "body-parser": "^1.20.9"
   }
 }

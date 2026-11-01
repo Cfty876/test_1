@@ -1,0 +1,69 @@
+{
+  "date": "2026-11-01",
+  "checks": [
+    {
+      "route": "/",
+      "status": 200
+    },
+    {
+      "route": "/healthz",
+      "status": 200
+    },
+    {
+      "route": "/readyz",
+      "status": 200
+    },
+    {
+      "route": "/not-a-real-page",
+      "status": 404
+    },
+    {
+      "route": "/api/not-a-route",
+      "status": 404
+    },
+    {
+      "route": "/api/platform/site-status",
+      "status": 200
+    },
+    {
+      "route": "/api/platform/public-home",
+      "status": 200
+    },
+    {
+      "route": "/fonts/Pervye_Book.woff",
+      "status": 200
+    },
+    {
+      "route": "/fonts/Pervye_Extended-Bold.woff",
+      "status": 200
+    },
+    {
+      "route": "/api/auth/session",
+      "status": 200
+    },
+    {
+      "route": "/api/platform/bootstrap",
+      "status": 200,
+      "counts": {
+        "applications": 5,
+        "accounts": 3
+      }
+    },
+    {
+      "route": "/api/platform/member-hub",
+      "status": 200
+    },
+    {
+      "route": "/api/platform/profiles",
+      "status": 200
+    },
+    {
+      "route": "published PDF",
+      "status": 200
+    },
+    {
+      "route": "published PDF",
+      "status": 200
+    }
+  ]
+}

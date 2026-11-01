@@ -1,0 +1,38 @@
+/* Brand originals supplied by the project owner, losslessly packaged as WOFF.
+   Book has internal weight 300; it serves as the regular text face here. */
+@font-face{font-family:'Pervye Book';src:url('/fonts/Pervye_Book.woff') format('woff');font-style:normal;font-weight:400;font-display:swap}
+@font-face{font-family:'Pervye Extended';src:url('/fonts/Pervye_Extended-Bold.woff') format('woff');font-style:normal;font-weight:700;font-display:swap}
+:root{--font-display:'Pervye Extended','Arial Black',sans-serif;--font-text:'Pervye Book','Segoe UI',sans-serif;--font-sans:var(--font-text);font-family:var(--font-text);font-synthesis:none}
+body,.platform-shell,dialog{font-family:var(--font-text);font-weight:400;font-synthesis:none}
+button,input,textarea,select{font-family:inherit}
+.platform-shell :is(h1,h2,h3),dialog :is(h1,h2,h3),.platform-dashboard :is(h1,h2,h3){font-family:var(--font-display);font-weight:700;letter-spacing:-.015em;line-height:1.2;text-wrap:balance;overflow-wrap:anywhere}
+.platform-shell :is(p,input,textarea,select){letter-spacing:normal}
+.home-copy{container-type:inline-size}
+.platform-shell .home-copy h1{font-family:var(--font-display);font-size:clamp(1.375rem,8.4cqi,3.5rem);font-weight:700;letter-spacing:-.02em;line-height:1.08;width:100%;max-width:100%;margin-top:16px}
+.home-title-line{white-space:normal;overflow-wrap:normal}
+.platform-shell :is(.home-section-heading h2,.areas-heading-row h2,.home-faq h2){font-size:clamp(24px,2.7vw,34px);line-height:1.22;letter-spacing:-.015em}
+.platform-shell .participation-path h3{font-size:clamp(22px,2vw,26px);line-height:1.25;letter-spacing:-.015em}
+.platform-shell :is(.idea-card h3,.implementation-card h3){font-size:22px;line-height:1.28}
+.platform-shell .initiative-story>h1{font-size:clamp(28px,3.7vw,48px);line-height:1.2;letter-spacing:-.02em}
+.platform-shell .home-actions a,.platform-shell .how-start{font-family:var(--font-display);font-weight:700;font-size:13px;line-height:1.35;letter-spacing:0;white-space:normal;text-align:center;padding:14px 18px;gap:12px}
+.area-title{font-family:var(--font-display);font-weight:700;font-size:17px;letter-spacing:-.015em;overflow-wrap:anywhere}
+.platform-shell .platform-form-card h1,.platform-shell .platform-form-card h2,.platform-shell .platform-success-card h2{font-size:clamp(23px,3vw,28px);line-height:1.25;letter-spacing:-.015em}
+.platform-shell .cabinet-heading h1{font-size:clamp(24px,2.7vw,32px);line-height:1.22;letter-spacing:-.015em}
+.platform-shell .cabinet-section-heading h2,.platform-shell .implementation-heading h2,.platform-shell .editor-heading h2{font-size:21px;line-height:1.3;letter-spacing:-.01em}
+.platform-shell .cabinet-navigation>button,.mobile-bottom-nav>button,.home-nav-links a,.cabinet-request-copy strong,.cabinet-record-title button,.cabinet-button,.pervik-input,.submission-switch a{font-family:var(--font-text);letter-spacing:0}
+.platform-shell :is(.cabinet-request-copy strong,.cabinet-record-title button){font-size:16px;line-height:1.45}
+.platform-shell .pervik-input{font-size:16px;line-height:1.5}
+.platform-shell .cabinet-request-copy,.platform-shell .cabinet-record-main{min-width:0}
+.platform-shell .home-menu-group h3{font-size:18px;line-height:1.3}
+@media(max-width:760px){
+ .platform-shell .home-actions a{font-size:13px;min-height:52px}
+ .platform-shell :is(.home-section-heading h2,.areas-heading-row h2,.home-faq h2){font-size:24px;line-height:1.25}
+ .platform-shell .participation-path h3{font-size:23px;line-height:1.26}
+ .platform-shell .area-title{font-size:15px}
+ .platform-shell .idea-card h3{font-size:22px}
+ .platform-shell .cabinet-section-heading h2{font-size:20px}
+ .platform-shell .home-copy h1{margin-top:8px}
+}
+
+.platform-shell :is(h4,h5,h6),dialog :is(h4,h5,h6){font-family:var(--font-display);font-weight:700;line-height:1.3;letter-spacing:-.01em}
+.platform-shell :is(table,td,th,label,summary),dialog :is(label,summary,button){font-family:var(--font-text)}

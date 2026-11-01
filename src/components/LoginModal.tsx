@@ -4,6 +4,8 @@ import { CrossIcon } from './Icons.tsx';
 import { authenticate, type UserSession } from '../utils/auth.ts';
 import { clearRememberedPassword, loadRememberedPassword, saveRememberedPassword } from '../utils/rememberedCredentials.ts';
 import { ModalDialog } from './ModalDialog.tsx';
+import { PrivacyAcknowledgement } from './PrivacyAcknowledgement.tsx';
+import { PRIVACY_ACKNOWLEDGEMENT_ERROR } from '../utils/legal.ts';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -44,6 +46,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [login, setLogin] = useState(getSavedLogin);
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
+  const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -55,6 +58,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     passwordEdited.current = false;
     setError('');
     setShowPassword(false);
+    setPrivacyAcknowledged(false);
     let active = true;
     void loadRememberedPassword().then((savedPassword) => {
       if (!active || !savedPassword || passwordEdited.current) return;
@@ -72,13 +76,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
+    if (!privacyAcknowledged) { setError(PRIVACY_ACKNOWLEDGEMENT_ERROR); return; }
     const formData = new FormData(e.currentTarget as HTMLFormElement);
     const loginValue = String(formData.get('username') ?? login).trim();
     const passwordValue = String(formData.get('password') ?? password);
     setIsSubmitting(true);
     setError('');
     try {
-      const session = await authenticate(loginValue, passwordValue);
+      const session = await authenticate(loginValue, passwordValue, privacyAcknowledged);
       if (session) {
         if (rememberMe) {
           try {
@@ -116,7 +121,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
 
   return (
-    <ModalDialog labelledBy="login-modal-title" onClose={onClose} busy={isSubmitting} fullScreen>
+    <ModalDialog labelledBy="login-modal-title" onClose={onClose} busy={isSubmitting} fullScreen className="login-screen">
       <div className="login-screen-inner">
         <button
           type="button"
@@ -135,9 +140,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
         <main className="login-main">
           <div className="login-card modal-animate">
-            <span className="login-card-eyebrow">ЛИЧНЫЙ КАБИНЕТ</span>
             <h1 id="login-modal-title">Вход в кабинет</h1>
-            <p className="login-card-caption">Для председателей, кураторов и партнёров Совета Первых Екатеринбурга</p>
+            <p className="login-card-caption">Вход для команды Совета Первых</p>
 
             <form ref={formRef} onSubmit={handleSubmit} className="login-form" autoComplete="on" name="platform-login">
           <div>
@@ -145,20 +149,23 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               htmlFor="login-input"
               className="login-label"
             >
-              Логин или почта
+              Логин
             </label>
             <input
               id="login-input"
               name="username"
               type="text"
               autoComplete="username"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
               required
               disabled={isSubmitting}
               maxLength={80}
               autoFocus
               defaultValue={login}
               onChange={(e) => setLogin(e.target.value)}
-              placeholder="Введите логин или почту"
+              placeholder="Введите логин"
               className="pervik-input login-input"
             />
           </div>
@@ -176,6 +183,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 name="password"
                 type={showPassword ? 'text' : 'password'}
                 autoComplete="current-password"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 required
                 disabled={isSubmitting}
                 defaultValue={password}
@@ -214,11 +224,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               }}
             />
             <span>
-              Запомнить меня на этом устройстве
-              <small>При следующем успешном входе новые данные заменят сохранённые.</small>
+              Запомнить меня
             </span>
           </label>
 
+          <PrivacyAcknowledgement checked={privacyAcknowledged} onChange={setPrivacyAcknowledged} disabled={isSubmitting} />
           {error && <p className="inline-error login-error" role="alert">{error}</p>}
           <button
             type="submit"
@@ -231,12 +241,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
             <div className="login-help">
               <span className="login-help-dot" />
-              <p>Доступ выдаёт администратор платформы. Если не получается войти, обратитесь к нему за проверкой учётной записи.</p>
+              <p>Доступ выдаёт администратор платформы.</p>
             </div>
           </div>
         </main>
 
-        <footer className="login-footer"><span>СОВЕТ ПЕРВЫХ · ЕКАТЕРИНБУРГ</span></footer>
       </div>
     </ModalDialog>
   );

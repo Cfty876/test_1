@@ -1,7 +1,15 @@
-import { createHmac, scryptSync, timingSafeEqual } from 'node:crypto';
+import { sendJson, readJsonBody } from './httpSupport.ts';
+import { passwordHash, PasswordBusyError } from './passwords.ts';
+import { guardMaintenance, readMaintenance, sendMaintenance } from './maintenance.ts';
+import { withMaintenanceAccess, MaintenanceModeError } from './maintenanceContext.ts';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { readPlatformState } from './platformStore.ts';
-import { readPublicInitiatives, savePublicInitiative } from './publicInitiativesStore.ts';
+import { readPlatformState, updatePlatformState } from './platformStore.ts';
+import { hasPrivacyAcknowledgement, PRIVACY_VERSION, PRIVACY_ACKNOWLEDGEMENT_ERROR } from '../src/utils/legal.ts';
+import { savePublicInitiative } from './publicInitiativesStore.ts';
+import { readPublishedInitiatives } from './initiativeProjection.ts';
+import type { CouncilStatus } from '../src/utils/implementations.ts';
+import { isCuratorRoleInfo } from '../src/utils/permissions.ts';
 
 type AuthEnvironment = Record<string, string | undefined>;
 type AuthRequest = IncomingMessage & { url?: string; body?: unknown };
@@ -18,11 +26,6 @@ const ROLE_DETAILS = {
     pageTitle: 'Моё отделение',
     pageSubtitle: 'База активистов и инициатив отделения',
   },
-  partner: {
-    roleBadge: 'Партнёр',
-    pageTitle: 'Инициативы для партнёра',
-    pageSubtitle: 'Проекты и запросы на поддержку от отделений и кураторов',
-  },
 } as const;
 
 export function getConfiguredUser(env: AuthEnvironment) {
@@ -30,14 +33,15 @@ export function getConfiguredUser(env: AuthEnvironment) {
   const role = env.AUTH_ROLE?.trim() as keyof typeof ROLE_DETAILS | undefined;
   if (!login || !role || !(role in ROLE_DETAILS)) return null;
 
-  const name = env.AUTH_DISPLAY_NAME?.trim() || (role === 'admin' ? 'Администратор' : role === 'chairman' ? 'Председатель' : 'Партнёр');
+  const name = env.AUTH_DISPLAY_NAME?.trim() || (role === 'admin' ? 'Администратор' : 'Председатель');
   const initials = name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || '??';
   return { role, login, name, initials, ...ROLE_DETAILS[role] };
 }
 
-export function createSessionUser(login: string, name: string, role: keyof typeof ROLE_DETAILS) {
+export function createSessionUser(login: string, name: string, role: keyof typeof ROLE_DETAILS, details?: { branch?: string; councilStatus?: CouncilStatus; roleInfo?: string }) {
   const initials = name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase() || '??';
-  return { role, login, name, initials, ...ROLE_DETAILS[role] };
+  const curator = role === 'chairman' && isCuratorRoleInfo(details?.roleInfo);
+  return { role, login, name, initials, ...ROLE_DETAILS[role], ...(curator ? { roleBadge: 'Куратор района', pageTitle: 'Кабинет куратора', pageSubtitle: 'Заявки, база отделений и реализация инициатив' } : {}), ...(role === 'chairman' && details?.councilStatus === 'Председатель Екатеринбурга' ? { roleBadge: 'Председатель городского Совета', pageTitle: 'Кабинет председателя Екатеринбурга', pageSubtitle: 'Проекты города, согласование запуска, команды и проверка отчётов' } : {}), branch: details?.branch, councilStatus: details?.councilStatus, canReviewApplications: role === 'admin' || curator };
 }
 
 function makeToken(payload: object, secret: string): string {
@@ -95,11 +99,13 @@ export function getSessionVersion(request: IncomingMessage, env: AuthEnvironment
   return secret ? readToken(getCookie(request, 'movement_session'), secret)?.version : undefined;
 }
 
-function sendJson(response: ServerResponse, status: number, body: unknown) {
-  response.statusCode = status;
-  response.setHeader('Content-Type', 'application/json; charset=utf-8');
-  response.setHeader('Cache-Control', 'no-store');
-  response.end(JSON.stringify(body));
+
+function sendStorageUnavailable(response: ServerResponse) {
+  response.setHeader('Retry-After', '60');
+  return sendJson(response, 503, {
+    code: 'PLATFORM_STORAGE_UNAVAILABLE',
+    error: 'Хранилище платформы временно недоступно. Обратитесь к администратору для проверки доступа и лимитов хранилища.',
+  });
 }
 
 interface StoredInitiative {
@@ -113,54 +119,19 @@ interface StoredInitiative {
 
 const INITIATIVE_AREAS = new Set(['Мероприятия', 'Медиа', 'IT', 'Волонтёрство']);
 
-function readJson(request: AuthRequest): Promise<Record<string, unknown>> {
-  const objectBody = (value: unknown): Record<string, unknown> => {
-    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Invalid request body');
-    return value as Record<string, unknown>;
-  };
-  // Vercel's Node runtime parses JSON into request.body before invoking the
-  // function. Local Vite middleware still needs to read the incoming stream.
-  if (request.body && typeof request.body === 'object' && !Array.isArray(request.body)) {
-    return Promise.resolve(request.body as Record<string, unknown>);
-  }
-  if (typeof request.body === 'string') {
-    try {
-      const body: unknown = JSON.parse(request.body);
-      return Promise.resolve(objectBody(body));
-    } catch {
-      return Promise.reject(new Error('Invalid request body'));
-    }
-  }
-  if (request.body !== undefined) return Promise.reject(new Error('Invalid request body'));
-
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = [];
-    let totalBytes = 0;
-    request.on('data', (chunk: Buffer) => {
-      totalBytes += chunk.length;
-      if (totalBytes > 16_384) {
-        reject(new Error('Request body too large'));
-        return;
-      }
-      chunks.push(chunk);
-    });
-    request.on('end', () => {
-      try {
-        resolve(objectBody(JSON.parse(Buffer.concat(chunks).toString('utf8'))));
-      } catch {
-        reject(new Error('Invalid request body'));
-      }
-    });
-    request.on('error', reject);
-  });
-}
+const readJson = (request: AuthRequest) => readJsonBody(request, 16_384);
 
 export function createAuthMiddleware(env: AuthEnvironment) {
-  return async (request: AuthRequest, response: ServerResponse, next: Next) => {
+  const attempts = new Map<string, { count: number; until: number }>();
+  return (request: AuthRequest, response: ServerResponse, next: Next) => withMaintenanceAccess(hasAdminSession(request, env), async () => {
     const pathname = new URL(request.url ?? '/', 'http://localhost').pathname;
+    if (pathname === '/api/initiatives') {
+      try { if (await guardMaintenance(request, response, env, hasAdminSession(request, env))) return; }
+      catch { return sendStorageUnavailable(response); }
+    }
     if (pathname === '/api/initiatives' && request.method === 'GET') {
       try {
-        return sendJson(response, 200, await readPublicInitiatives(env));
+        return sendJson(response, 200, await readPublishedInitiatives(env));
       } catch {
         return sendJson(response, 500, { error: 'Could not load initiatives' });
       }
@@ -172,7 +143,7 @@ export function createAuthMiddleware(env: AuthEnvironment) {
       const user = getConfiguredUser(env);
       if (!username || !sessionSecret || !user) return sendJson(response, 503, { error: 'Authentication is not configured' });
       const session = readToken(getCookie(request, 'movement_session'), sessionSecret);
-      if (!session || session.sub !== username || user.role !== 'admin') return sendJson(response, 403, { error: 'Admin access required' });
+      if (!session || session.sub !== username || session.version !== env.AUTH_PASSWORD_SALT?.trim() || user.role !== 'admin') return sendJson(response, 403, { error: 'Admin access required' });
 
       try {
         const body = await readJson(request);
@@ -210,39 +181,73 @@ export function createAuthMiddleware(env: AuthEnvironment) {
         return sendJson(response, 400, { error: 'Invalid request' });
       }
 
+      if (!hasPrivacyAcknowledgement(body)) return sendJson(response, 400, { error: PRIVACY_ACKNOWLEDGEMENT_ERROR });
       const login = typeof body.login === 'string' ? body.login.trim() : '';
       const password = typeof body.password === 'string' ? body.password : '';
+      if (!login || login.length > 160 || !password || password.length > 256) return sendJson(response, 401, { error: 'Invalid credentials' });
       const normalizedLogin = login.toLocaleLowerCase('ru-RU');
+      if (env.RATE_LIMIT_ENABLED !== 'false') {
+        const ip = (request as AuthRequest & { ip?: string }).ip || request.socket.remoteAddress || 'unknown';
+        const key = createHmac('sha256', sessionSecret).update(`${ip}\0${normalizedLogin}`).digest('hex');
+        const now = Date.now(); let bucket = attempts.get(key);
+        if (!bucket || bucket.until <= now) { bucket = { count: 0, until: now + 60_000 }; attempts.delete(key); attempts.set(key, bucket); }
+        bucket.count++; while (attempts.size > 10000) attempts.delete(attempts.keys().next().value!);
+        if (bucket.count > 12) { response.setHeader('Retry-After', '60'); return sendJson(response, 429, { error: 'Слишком много попыток входа. Подождите минуту.' }); }
+      }
       let state;
       try {
         state = await readPlatformState(env);
       } catch {
-        return sendJson(response, 503, { error: 'Platform storage is not configured' });
+        return sendStorageUnavailable(response);
       }
       const account = state.accounts.find((item) => item.login.toLocaleLowerCase('ru-RU') === normalizedLogin);
       const bootstrapUser = getConfiguredUser(env);
       let user: ReturnType<typeof getConfiguredUser> | ReturnType<typeof createSessionUser> | null = null;
       let validPassword = false;
 
+      try {
       if (account) {
         const expectedHash = Buffer.from(account.passwordHash, 'hex');
-        const actualHash = scryptSync(password, Buffer.from(account.salt, 'base64url'), expectedHash.length);
+        const actualHash = await passwordHash(password, Buffer.from(account.salt, 'base64url'), expectedHash.length);
         validPassword = expectedHash.length > 0 && timingSafeEqual(actualHash, expectedHash);
-        user = createSessionUser(account.login, account.name, account.role);
+        user = createSessionUser(account.login, account.name, account.role, account);
       } else if (bootstrapUser && normalizedLogin === bootstrapUser.login.toLocaleLowerCase('ru-RU')) {
-        const passwordHash = env.AUTH_PASSWORD_HASH?.trim() ?? '';
+        const configuredHash = env.AUTH_PASSWORD_HASH?.trim() ?? '';
         const passwordSalt = env.AUTH_PASSWORD_SALT?.trim() ?? '';
-        const expectedHash = Buffer.from(passwordHash, 'hex');
-        const actualHash = scryptSync(password, Buffer.from(passwordSalt, 'base64url'), expectedHash.length);
+        const expectedHash = Buffer.from(configuredHash, 'hex');
+        const actualHash = await passwordHash(password, Buffer.from(passwordSalt, 'base64url'), expectedHash.length);
         validPassword = expectedHash.length > 0 && timingSafeEqual(actualHash, expectedHash);
         user = bootstrapUser;
       }
 
+      if (!user) await passwordHash(password, Buffer.alloc(16, 1));
+      } catch (error) { if (error instanceof PasswordBusyError) return sendStorageUnavailable(response); throw error; }
       if (!user || !validPassword) return sendJson(response, 401, { error: 'Invalid credentials' });
+      if (user.role !== 'admin') {
+        try { const maintenance = await readMaintenance(env); if (maintenance.enabled) return sendMaintenance(response, maintenance); }
+        catch { return sendStorageUnavailable(response); }
+      }
+
+      const signedInLogin = user.login;
+      const credentialVersion = account?.salt || env.AUTH_PASSWORD_SALT?.trim();
+      try {
+        const recorded = await withMaintenanceAccess(user.role === 'admin', () => updatePlatformState(current => {
+          const currentAccount = current.accounts.find(item => item.login.toLocaleLowerCase('ru-RU') === normalizedLogin);
+          if (currentAccount ? currentAccount.salt !== credentialVersion : account !== undefined) return { state: current, result: false };
+          return { state: { ...current, privacyAcknowledgements: [
+            ...current.privacyAcknowledgements.filter(item => item.login.toLocaleLowerCase('ru-RU') !== normalizedLogin),
+            { login: signedInLogin, version: PRIVACY_VERSION, at: new Date().toISOString() },
+          ] }, result: true };
+        }, env));
+        if (!recorded) return sendJson(response, 401, { error: 'Invalid credentials' });
+      } catch (error) {
+        if (error instanceof MaintenanceModeError) return sendMaintenance(response, error.maintenance);
+        return sendStorageUnavailable(response);
+      }
 
       const expiresAt = Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 7;
       const token = makeToken({ sub: user.login, exp: expiresAt, version: account?.salt || env.AUTH_PASSWORD_SALT?.trim() }, sessionSecret);
-      const secure = env.AUTH_COOKIE_SECURE === 'true' || env.NODE_ENV === 'production';
+      const secure = env.AUTH_COOKIE_SECURE === 'true' || (env.AUTH_COOKIE_SECURE !== 'false' && env.NODE_ENV === 'production');
       response.setHeader('Set-Cookie', `movement_session=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=604800${secure ? '; Secure' : ''}`);
       return sendJson(response, 200, { user });
     }
@@ -255,11 +260,11 @@ export function createAuthMiddleware(env: AuthEnvironment) {
         const account = state.accounts.find((item) => item.login === session.sub);
         const configured = getConfiguredUser(env);
         const user = account
-          ? session.version === account.salt ? createSessionUser(account.login, account.name, account.role) : null
+          ? session.version === account.salt ? createSessionUser(account.login, account.name, account.role, account) : null
           : configured?.login === session.sub && session.version === env.AUTH_PASSWORD_SALT?.trim() ? configured : null;
         return sendJson(response, 200, { user });
       } catch {
-        return sendJson(response, 503, { error: 'Platform storage is unavailable' });
+        return sendStorageUnavailable(response);
       }
     }
 
@@ -269,5 +274,5 @@ export function createAuthMiddleware(env: AuthEnvironment) {
     }
 
     return sendJson(response, 404, { error: 'Not found' });
-  };
+  });
 }

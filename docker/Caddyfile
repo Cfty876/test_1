@@ -1,0 +1,26 @@
+{
+  email {$TLS_EMAIL}
+  servers {
+    timeouts {
+      read_header 15s
+      read_body 20s
+      idle 60s
+    }
+  }
+}
+{$PERVIK_DOMAIN} {
+  encode zstd gzip
+  request_body {
+    max_size 3MB
+  }
+  header Strict-Transport-Security "max-age=31536000"
+  reverse_proxy app:3000 {
+    health_uri /readyz
+    health_interval 15s
+    health_timeout 6s
+    transport http {
+      dial_timeout 5s
+      response_header_timeout 25s
+    }
+  }
+}

@@ -15,7 +15,6 @@ export const PARTICIPATION_OPTIONS: ParticipationOption[] = [
   { value: 'IT и техническая поддержка', label: 'IT', icon: Laptop },
   { value: 'Мастер-класс', label: 'Мастер-класс', icon: Presentation },
   { value: 'Волонтёр', label: 'Волонтёр', icon: HeartHandshake },
-  { value: 'Я — организация-партнёр', label: 'Партнёр', icon: Building2 },
   { value: 'Свой вариант (указать область)', label: 'Другое', icon: PencilLine },
 ];
 

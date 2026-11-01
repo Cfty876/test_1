@@ -1,0 +1,17 @@
+node_modules
+dist
+.git
+.env*
+data
+.aistudio
+.codex
+design
+
+.agents
+*.otf
+**/*.test.ts
+
+deliverables
+scripts
+*.jpg
+*.png

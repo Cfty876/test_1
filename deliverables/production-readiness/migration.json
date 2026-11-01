@@ -1,0 +1,15 @@
+{
+  "syntheticMigration": {
+    "collectionsAndOrderSha256Matched": true,
+    "accounts": 1000,
+    "applications": 3000,
+    "implementations": 1000,
+    "baseMembers": 1000,
+    "meritLedger": 5000
+  },
+  "workingMigration": {
+    "matchedRetainedLegacySnapshot": true,
+    "allCollectionsMatched": true,
+    "concurrentLikePreserved": true
+  }
+}

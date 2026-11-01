@@ -1,47 +1,34 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowRight, ArrowUpRight, CalendarDays, Globe2, Lightbulb, LogIn, Mail, Phone, Search, X } from 'lucide-react';
+import { InstallAppCard } from './InstallApp.tsx';
+import React from 'react';
+import { ArrowRight, ArrowUpRight, Globe2, Mail, Phone } from 'lucide-react';
 import type { HelpArea } from './ApplicationFormView.tsx';
-import type { PublicInitiative } from '../utils/publicInitiatives.ts';
+import { type PublicInitiative } from '../utils/publicInitiatives.ts';
 import type { FeaturedInitiative } from '../utils/homepage.ts';
 import { HelpWanted, HowItWorks } from './HomeSections.tsx';
+import { type PublicImplementation } from '../utils/implementations.ts';
 
 interface HomeViewProps {
-  onGoToForm: (area?: HelpArea, initiative?: PublicInitiative) => void;
+  onOpenInitiative: (initiative: PublicInitiative) => void;
+  onCatalog: () => void;
+  onActivist: () => void;
+  onGoToForm: (area?: HelpArea, initiative?: PublicInitiative, implementation?: PublicImplementation) => void;
+  likedIds: string[];
+  likingId: string | null;
+  onLike: (id: string) => Promise<void>;
   onOpenLogin: () => void;
-  initiatives: PublicInitiative[];
   featuredInitiatives: FeaturedInitiative[];
-  loading: boolean;
-  loadError: boolean;
   featuredLoadError: boolean;
-  onRetry: () => void;
+  onTrack: () => void;
 }
 
 const areas = [
-  { number: '01', title: 'События', area: 'Мероприятия' as const, description: 'Придумать, собрать, провести', color: 'clay' },
-  { number: '02', title: 'Медиа', area: 'Медиа' as const, description: 'Рассказывать о том, что важно', color: 'sage' },
-  { number: '03', title: 'Технологии', area: 'IT' as const, description: 'Создавать полезные цифровые вещи', color: 'blue' },
-  { number: '04', title: 'Волонтёрство', area: 'Волонтёрство' as const, description: 'Быть рядом и помогать делом', color: 'yellow' },
+  { number: '01', title: 'События', area: 'Мероприятия' as const, description: 'Организация мероприятий', color: 'clay' },
+  { number: '02', title: 'Медиа', area: 'Медиа' as const, description: 'Фото, видео и тексты', color: 'sage' },
+  { number: '03', title: 'Технологии', area: 'IT' as const, description: 'Разработка и дизайн', color: 'blue' },
+  { number: '04', title: 'Волонтёрство', area: 'Волонтёрство' as const, description: 'Помощь на проектах', color: 'yellow' },
 ];
 
-const boardAreas: Array<'Все' | HelpArea> = ['Все', 'Мероприятия', 'Медиа', 'IT', 'Волонтёрство'];
-
-export const HomeView: React.FC<HomeViewProps> = ({ onGoToForm, onOpenLogin, initiatives, featuredInitiatives, loading, loadError, featuredLoadError, onRetry }) => {
-  const [selectedArea, setSelectedArea] = useState<'Все' | HelpArea>('Все');
-  const [query, setQuery] = useState('');
-  const [selectedInitiative, setSelectedInitiative] = useState<PublicInitiative | null>(null);
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    if (selectedInitiative && !dialogRef.current?.open) dialogRef.current?.showModal();
-  }, [selectedInitiative]);
-  const visibleInitiatives = useMemo(() => {
-    const needle = query.trim().toLocaleLowerCase('ru');
-    return initiatives.filter((initiative) => {
-      if (selectedArea !== 'Все' && initiative.area !== selectedArea) return false;
-      return !needle || [initiative.title, initiative.description, initiative.area, initiative.author]
-        .some((value) => value.toLocaleLowerCase('ru').includes(needle));
-    });
-  }, [initiatives, selectedArea, query]);
-
+export const HomeView: React.FC<HomeViewProps> = ({ onOpenInitiative, onCatalog, onActivist, onGoToForm, onOpenLogin, featuredInitiatives, featuredLoadError, onTrack, likedIds, likingId, onLike }) => {
   return <div className="platform-home">
     <main className="platform-home-main">
       <section className="home-hero" aria-labelledby="home-title">
@@ -52,76 +39,27 @@ export const HomeView: React.FC<HomeViewProps> = ({ onGoToForm, onOpenLogin, ini
             <span className="home-title-line home-title-accent">в своём городе.</span>
           </h1>
           <p className="home-lede">
-            Предложи инициативу, найди единомышленников и получи поддержку Совета Первых Екатеринбурга, чтобы воплотить её в жизнь.
+            <span className="desktop-copy">Предлагай инициативы или стань активистом: вместе меняем Екатеринбург.</span><span className="mobile-copy">Твоя идея. Твоя помощь. Наш город.</span>
           </p>
           <div className="home-actions">
-            <button type="button" onClick={() => onGoToForm()} className="home-primary">
-              Предложить идею <ArrowRight size={17} strokeWidth={2.2} />
-            </button>
-            <button type="button" onClick={onOpenLogin} className="home-login">
-              <LogIn size={16} /> Войти в кабинет
-            </button>
+            <a href="/?view=form&kind=initiative" onClick={event => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); onGoToForm(); }} className="home-primary home-participation-action">Предложить инициативу <ArrowRight size={17} /></a>
+            <a href="/?view=form&kind=activist" onClick={event => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); onActivist(); }} className="home-login home-participation-action">Стать активистом <ArrowRight size={17} /></a>
           </div>
         </div>
 
         <div className="home-art" role="img" aria-label="Участники Движения Первых" />
       </section>
 
-      <HowItWorks onStart={() => onGoToForm()} />
-      <HelpWanted initiatives={featuredInitiatives} loadError={featuredLoadError} onDetails={setSelectedInitiative} onJoin={(initiative) => onGoToForm(initiative.area, initiative)} />
+      <InstallAppCard />
+      <HowItWorks onStart={() => onGoToForm()} onActivist={onActivist} />
+      <div className="home-track-link"><span>Уже отправил заявку?</span><button type="button" onClick={onTrack}><span className="desktop-copy">Проверить статус и ответ команды</span><span className="mobile-copy">Проверить статус</span> <ArrowUpRight size={16} /></button></div>
+      <HelpWanted initiatives={featuredInitiatives} loadError={featuredLoadError} onDetails={onOpenInitiative} onLike={onLike} likedIds={likedIds} likingId={likingId} onCatalog={onCatalog} />
 
-      <section className="initiative-board-section" aria-labelledby="initiative-board-title">
-        <div className="initiative-board-heading">
-          <div>
-            <div className="section-eyebrow"><span className="home-kicker-dot" /> ИДЕИ, КОТОРЫЕ СТАНОВЯТСЯ ДЕЛОМ</div>
-            <h2 id="initiative-board-title">Доска инициатив</h2>
-            <p>Одобренные Советом идеи ребят Екатеринбурга. Выбери ту, к которой хочешь присоединиться.</p>
-          </div>
-          <div className="initiative-board-count"><Lightbulb size={18} /><strong>{initiatives.length}</strong><span>{initiatives.length % 10 === 1 && initiatives.length % 100 !== 11 ? 'инициатива' : initiatives.length % 10 >= 2 && initiatives.length % 10 <= 4 && (initiatives.length % 100 < 12 || initiatives.length % 100 > 14) ? 'инициативы' : 'инициатив'}</span></div>
-        </div>
-
-        <div className="initiative-board-tools">
-          <label className="initiative-search">
-            <Search size={17} aria-hidden="true" />
-            <input type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Найти идею или автора" aria-label="Поиск инициатив" />
-          </label>
-          <div className="initiative-filters" aria-label="Фильтр по направлению">
-            {boardAreas.map((area) => (
-              <button key={area} type="button" aria-pressed={selectedArea === area} onClick={() => setSelectedArea(area)}>{area}</button>
-            ))}
-          </div>
-        </div>
-
-        {loadError && <p className="inline-error" role="alert">Не удалось обновить доску инициатив. <button type="button" onClick={onRetry}>Попробовать снова</button></p>}
-        {loading && !initiatives.length ? <p className="board-loading" role="status">Загружаем инициативы…</p> : visibleInitiatives.length ? (
-          <div className="initiative-sticker-grid">
-            {visibleInitiatives.map((initiative, index) => (
-              <button type="button" key={initiative.id} onClick={() => setSelectedInitiative(initiative)} className={`initiative-sticker sticker-tone-${index % 4}`}>
-                <span className="sticker-pin" aria-hidden="true" />
-                <span className="sticker-topline"><span>{initiative.area}</span><ArrowUpRight size={16} /></span>
-                <strong>{initiative.title}</strong>
-                <span className="sticker-description">{initiative.description}</span>
-                <span className="sticker-author">{initiative.author}</span>
-              </button>
-            ))}
-          </div>
-        ) : !loadError ? (
-          <div className="initiative-board-empty">
-            <div className="initiative-empty-icon"><Lightbulb size={22} /></div>
-            <h3>{initiatives.length ? 'По этому запросу идей пока нет' : 'Здесь появятся идеи ребят'}</h3>
-            <p>{initiatives.length ? 'Попробуй другое направление или измени поиск.' : 'Предложи свою инициативу. После одобрения Советом она появится на этой доске.'}</p>
-            {!initiatives.length && <button type="button" onClick={() => onGoToForm()} className="initiative-empty-cta">Предложить инициативу <ArrowRight size={16} /></button>}
-          </div>
-        ) : null}
-      </section>
-
-      <section className="areas-section" aria-labelledby="areas-heading">
+      <section id="directions" tabIndex={-1} className="areas-section home-nav-target" aria-labelledby="areas-heading">
         <div className="areas-heading-row">
           <div>
-            <div className="section-eyebrow">ТВОЁ МЕСТО ЗДЕСЬ</div>
-            <h2 id="areas-heading">С чего начнём?</h2>
+            <h2 id="areas-heading">Найди своё направление</h2><p>Выбери, чем хочешь помогать. Можно отметить несколько направлений в анкете активиста.</p>
           </div>
-          <p>Неважно, сколько у тебя опыта.<br />Важно, что тебе хочется сделать.</p>
         </div>
         <div className="area-grid">
           {areas.map((area) => (
@@ -135,7 +73,14 @@ export const HomeView: React.FC<HomeViewProps> = ({ onGoToForm, onOpenLogin, ini
         </div>
       </section>
 
-      <footer className="home-footer" aria-label="Информация о Движении Первых и контакты">
+      <section id="questions" tabIndex={-1} className="home-faq home-nav-target" aria-labelledby="home-faq-title"><div><h2 id="home-faq-title">Вопросы и ответы</h2></div><div className="home-faq-list">
+        <details><summary>Нужно ли регистрироваться, чтобы предложить идею?</summary><p>Для инициативы и анкеты активиста аккаунт не нужен. Сохрани код заявки, чтобы проверить ответ, внести изменения или отозвать её.</p></details>
+        <details><summary>Что происходит после отправки?</summary><p>Команда рассмотрит заявку. Решение и комментарии появятся в её истории.</p><button type="button" onClick={onTrack}>Проверить мою заявку <ArrowUpRight size={14} /></button></details>
+        <details><summary>Одобрение означает, что проект уже получил поддержку?</summary><p>После одобрения инициатива появится в каталоге. Анкета активиста попадёт в закрытую базу команды. Команду, сроки, площадку и ресурсы согласуют отдельно.</p></details>
+        <details><summary>Кто увидит мои данные?</summary><p>В каталоге видны имя автора и описание. Телефон и почта доступны только команде. Не указывай личные контакты в описании.</p></details>
+      </div></section>
+
+      <footer id="contacts" tabIndex={-1} className="home-footer home-nav-target" aria-label="Информация о Движении Первых и контакты">
         <div className="footer-main">
           <section className="footer-about">
             <div className="footer-brandline">
@@ -145,12 +90,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onGoToForm, onOpenLogin, ini
                 <span>Движение Первых · Свердловская область</span>
               </div>
             </div>
-            <p>Общероссийское общественно-государственное движение детей и молодёжи. Создаём возможности, чтобы идеи Первых становились делами — вместе с городом и для города.</p>
-            <div className="footer-facts" aria-label="Данные регионального отделения">
-              <span><b>466 154</b> участника</span>
-              <span><b>16 689</b> наставников</span>
-              <span><b>1 583</b> первичных отделения</span>
-            </div>
+            <p>Инициативы и активисты Совета Первых Екатеринбурга.</p>
             <a className="footer-official-link" href="https://будьвдвижении.рф" target="_blank" rel="noreferrer">
               <Globe2 size={16} /> Официальный сайт Движения Первых <ArrowUpRight size={14} />
             </a>
@@ -166,8 +106,8 @@ export const HomeView: React.FC<HomeViewProps> = ({ onGoToForm, onOpenLogin, ini
           </section>
 
           <section className="footer-social" aria-labelledby="footer-social-title">
-            <h2 id="footer-social-title">Сообщества Екатеринбурга</h2>
-            <p>Официальные страницы Движения Первых в Екатеринбурге и Свердловской области</p>
+            <h2 id="footer-social-title">Сообщества</h2>
+
             <div className="footer-social-links">
               <a href="https://vk.ru/mypervie96_ekb" target="_blank" rel="noreferrer" aria-label="ВКонтакте Движения Первых Екатеринбурга" title="ВКонтакте · Екатеринбург">
                 <img className="movement-social-icon" src="/brand/vk.svg" alt="" /><span>ВКонтакте · Екатеринбург</span><ArrowUpRight size={14} />
@@ -180,21 +120,13 @@ export const HomeView: React.FC<HomeViewProps> = ({ onGoToForm, onOpenLogin, ini
         </div>
 
         <div className="footer-bottom">
+          <a href="/documents/2026-11-01/index.html" target="_blank" rel="noopener noreferrer">Документы · тестовая редакция</a>
           <span>Движение Первых · Совет Екатеринбурга</span>
-          <span>Информация об отделении — на <a href="https://xn--90acagbhgpca7c8c7f.xn--p1ai/regional-offices/regionalnoe-otdelenie-sverdlovskoy-oblasti_41/" target="_blank" rel="noreferrer">официальном сайте Движения</a></span>
+          <span><a href="https://xn--90acagbhgpca7c8c7f.xn--p1ai/regional-offices/regionalnoe-otdelenie-sverdlovskoy-oblasti_41/" target="_blank" rel="noreferrer">Об отделении</a></span>
           <button type="button" onClick={onOpenLogin}>Для команды <ArrowUpRight size={14} /></button>
+          <button type="button" onClick={onTrack}>Моя заявка <ArrowUpRight size={14} /></button>
         </div>
       </footer>
     </main>
-      {selectedInitiative && (
-          <dialog ref={dialogRef} className="initiative-dialog" aria-labelledby="initiative-dialog-title" onClose={() => setSelectedInitiative(null)} onClick={(event) => { if (event.target === event.currentTarget) { const rect = event.currentTarget.getBoundingClientRect(); if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) event.currentTarget.close(); } }}>
-            <button type="button" className="initiative-dialog-close" aria-label="Закрыть" onClick={() => dialogRef.current?.close()}><X size={19} /></button>
-            <span className="initiative-dialog-area">{selectedInitiative.area}</span>
-            <h2 id="initiative-dialog-title">{selectedInitiative.title}</h2>
-            <p className="initiative-dialog-description">{selectedInitiative.description}</p>
-            <div className="initiative-dialog-meta"><span>Автор: {selectedInitiative.author}</span><span><CalendarDays size={14} /> {new Date(selectedInitiative.publishedAt).toLocaleDateString('ru-RU')}</span></div>
-            <button type="button" className="initiative-empty-cta" onClick={() => { onGoToForm(selectedInitiative.area, selectedInitiative); }}>Хочу помочь <ArrowRight size={16} /></button>
-          </dialog>
-      )}
   </div>;
 };

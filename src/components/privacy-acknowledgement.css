@@ -1,0 +1,8 @@
+.platform-shell .privacy-acknowledgement { margin-block: 16px; min-width: 0; text-align: left; font-size: 14px; line-height: 1.5; color: #202024; }
+.platform-shell .privacy-acknowledgement-check { display: flex; align-items: flex-start; gap: 12px; min-height: 44px; cursor: pointer; }
+.platform-shell .privacy-acknowledgement-check input[type="checkbox"] { appearance: auto; flex: 0 0 20px; width: 20px; height: 20px; min-height: 20px; margin: 3px 0 0; padding: 0; accent-color: #df002b; }
+.platform-shell .privacy-acknowledgement-check span { min-width: 0; }
+.platform-shell .privacy-acknowledgement a { color: #b90024; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.platform-shell .privacy-acknowledgement p { font-size: 12px; line-height: 1.5; margin: 8px 0; color: #55555d; }
+.platform-shell .privacy-documents-link { display: inline-flex; align-items: center; min-height: 44px; }
+.platform-shell .privacy-acknowledgement :focus-visible { outline: 2px solid #b90024; outline-offset: 3px; }

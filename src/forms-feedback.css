@@ -1,0 +1,50 @@
+/* One language for form errors, notices and recovery screens. */
+.platform-shell .field-feedback-host { flex: 1 0 100%; grid-column: 1 / -1; min-width: 0; }
+.platform-shell .field-feedback { display: flex; align-items: flex-start; gap: 8px; margin: 8px 0 2px; color: #a80021; font: 400 14px/1.5 var(--font-text); text-align: left; }
+.platform-shell .field-feedback svg { flex: 0 0 16px; margin-top: 3px; }
+.platform-shell .field-feedback span { min-width: 0; overflow-wrap: anywhere; }
+.platform-shell :is(input,textarea,select)[aria-invalid="true"] { border-color: #bb0025; background-color: #fff8f9; box-shadow: 0 0 0 1px #bb0025; }
+.platform-shell :is(input,textarea,select)[aria-invalid="true"]:focus-visible { outline: 3px solid #df002b30; outline-offset: 2px; }
+.platform-shell :is(.inline-error,.profile-error) { margin-block: 12px; padding: 14px 16px; border: 1px solid #edbdc6; border-left: 4px solid #c00026; border-radius: 10px; background: #fff4f6; color: #94001c; font: 400 14px/1.6 var(--font-text); overflow-wrap: anywhere; text-align: left; }
+.platform-shell :is(.inline-error,.profile-error) button { min-height: 44px; }
+.platform-shell .profile-success { border: 1px solid #b9d8c8; background: #f2faf5; color: #205b3b; border-radius: 10px; padding: 14px 16px; font-size: 14px; line-height: 1.6; }
+.platform-shell .optional-contact-field label { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 4px 12px; margin-bottom: 6px; font-size: 14px; }
+.platform-shell .optional-contact-field label span { font-size: 12px; color: #61616b; }
+.platform-shell .optional-contact-field p { margin-top: 8px; font-size: 13px; line-height: 1.5; color: #61616b; }
+.platform-shell input[type="tel"] { font-variant-numeric: tabular-nums; }
+.platform-shell :is(input,textarea,select) { scroll-margin-block: 100px; }
+.platform-shell .platform-toast { gap: 12px; padding: 12px 12px 12px 16px; border: 1px solid #dededb; border-left: 4px solid #df002b; border-radius: 14px; background: #fff; color: #202024; box-shadow: 0 8px 28px #20202418; transform: translateX(-50%); }
+.platform-shell .platform-toast > span:first-child { color: #bc0025; }
+.platform-shell .platform-toast > button { width: 44px; height: 44px; min-width: 44px; border-radius: 9px; color: #44444c; }
+.platform-shell .platform-toast > button:hover { background: #f0f0ed; }
+.platform-shell .platform-toast > button:focus-visible { outline: 2px solid #bd0025; outline-offset: 2px; }
+.platform-shell .recovery-page { width: min(1120px,calc(100% - 64px)); min-height: calc(100svh - 96px); margin: auto; padding: 64px 0; display: grid; grid-template-columns: .9fr 1.1fr; align-items: center; gap: clamp(28px,5vw,80px); }
+.platform-shell .recovery-code { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 32px; align-self: stretch; min-height: 340px; max-height: 480px; padding: 32px 24px; border-radius: 24px; background: #df002b; color: #fff; font: 700 clamp(84px,11vw,156px)/1 var(--font-display); letter-spacing: -.055em; }
+.platform-shell .recovery-code span { font: 400 16px/1.5 var(--font-text); letter-spacing: 0; text-align: center; }
+.platform-shell .recovery-copy { min-width: 0; }
+.platform-shell .recovery-label { margin-bottom: 16px; font-size: 14px; color: #aa0021; }
+.platform-shell .recovery-copy h1 { font-size: clamp(27px,3.3vw,44px); line-height: 1.22; margin: 0 0 20px; }
+.platform-shell .recovery-copy > p:not(.recovery-label) { font-size: 17px; line-height: 1.7; color: #56565d; max-width: 44ch; }
+.platform-shell .recovery-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin-top: 32px; }
+.platform-shell .recovery-actions a { display: inline-flex; justify-content: space-between; align-items: center; gap: 20px; min-height: 52px; padding: 12px 18px; border-radius: 10px; font-size: 16px; line-height: 1.5; text-decoration: none; color: #202024; }
+.platform-shell .recovery-actions .recovery-primary { background: #df002b; color: #fff; }
+.platform-shell .recovery-actions .recovery-primary:hover { background: #bc0025; }
+.platform-shell .recovery-actions a:not(.recovery-primary):hover { background: #f0f0ed; }
+.platform-shell .recovery-actions a:focus-visible { outline: 3px solid #9e0020; outline-offset: 4px; }
+@media(max-width:700px) {
+  .platform-shell .platform-home .home-actions .home-participation-action,
+  .platform-shell .home-menu-actions .home-participation-action { display: flex !important; width: 100%; min-height: 56px; height: auto; justify-content: space-between; gap: 12px; margin: 0; padding: 16px 18px; border: 1px solid #df002b; border-radius: 12px; background: #df002b; color: #fff; font: 700 13px/1.4 var(--font-display); text-align: left; box-shadow: none; transform: none; }
+  .platform-shell .platform-home .home-actions .home-participation-action:hover { background: #bc0025; border-color: #bc0025; }
+  .platform-shell .home-actions .home-participation-action svg { width: 18px; height: 18px; flex-shrink: 0; }
+  .platform-shell .recovery-page { width: calc(100% - 32px); min-height: auto; grid-template-columns: 1fr; gap: 28px; padding: 24px 0 48px; }
+  .platform-shell .recovery-code { min-height: 230px; max-height: none; gap: 16px; border-radius: 20px; font-size: 112px; }
+  .platform-shell .recovery-code span { font-size: 14px; }
+  .platform-shell .recovery-copy h1 { font-size: 28px; }
+  .platform-shell .recovery-copy > p:not(.recovery-label) { font-size: 16px; }
+  .platform-shell .recovery-actions { align-items: stretch; margin-top: 24px; }
+  .platform-shell .recovery-actions a { justify-content: center; gap: 12px; width: 100%; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .platform-shell .platform-toast { animation: none; }
+  .platform-shell :is(.field-feedback,.home-participation-action,.recovery-actions a) { animation: none; transition: none; }
+}

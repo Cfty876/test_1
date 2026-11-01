@@ -1,0 +1,16 @@
+node_modules
+.git
+.vercel
+.aistudio
+.env
+.env.*
+!.env.example
+data
+coverage
+dist
+*.log
+*.tmp
+*.test.ts
+*.test.tsx
+логотип.png
+cde29b3d-f410-4aa1-938c-6b8c6b27782a-nobg.svg

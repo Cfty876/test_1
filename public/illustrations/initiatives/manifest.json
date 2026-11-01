@@ -1,0 +1,176 @@
+[
+  {
+    "id": "cleanup",
+    "label": "Чистый город",
+    "area": "Волонтёрство",
+    "src": "/illustrations/initiatives/cleanup.svg"
+  },
+  {
+    "id": "recycling",
+    "label": "Раздельный сбор",
+    "area": "Волонтёрство",
+    "src": "/illustrations/initiatives/recycling.svg"
+  },
+  {
+    "id": "planting",
+    "label": "Озеленение",
+    "area": "Волонтёрство",
+    "src": "/illustrations/initiatives/planting.svg"
+  },
+  {
+    "id": "animals",
+    "label": "Помощь животным",
+    "area": "Волонтёрство",
+    "src": "/illustrations/initiatives/animals.svg"
+  },
+  {
+    "id": "food",
+    "label": "Сбор вещей и продуктов",
+    "area": "Волонтёрство",
+    "src": "/illustrations/initiatives/food.svg"
+  },
+  {
+    "id": "elders",
+    "label": "Забота о старших",
+    "area": "Волонтёрство",
+    "src": "/illustrations/initiatives/elders.svg"
+  },
+  {
+    "id": "volunteers",
+    "label": "Команда волонтёров",
+    "area": "Волонтёрство",
+    "src": "/illustrations/initiatives/volunteers.svg"
+  },
+  {
+    "id": "festival",
+    "label": "Городской фестиваль",
+    "area": "Мероприятия",
+    "src": "/illustrations/initiatives/festival.svg"
+  },
+  {
+    "id": "concert",
+    "label": "Концерт и музыка",
+    "area": "Мероприятия",
+    "src": "/illustrations/initiatives/concert.svg"
+  },
+  {
+    "id": "theatre",
+    "label": "Театр и сцена",
+    "area": "Мероприятия",
+    "src": "/illustrations/initiatives/theatre.svg"
+  },
+  {
+    "id": "sport",
+    "label": "Командный спорт",
+    "area": "Мероприятия",
+    "src": "/illustrations/initiatives/sport.svg"
+  },
+  {
+    "id": "running",
+    "label": "Забеги и движение",
+    "area": "Мероприятия",
+    "src": "/illustrations/initiatives/running.svg"
+  },
+  {
+    "id": "games",
+    "label": "Настольные игры",
+    "area": "Мероприятия",
+    "src": "/illustrations/initiatives/games.svg"
+  },
+  {
+    "id": "workshop",
+    "label": "Творческая мастерская",
+    "area": "Мероприятия",
+    "src": "/illustrations/initiatives/workshop.svg"
+  },
+  {
+    "id": "reading",
+    "label": "Книги и чтение",
+    "area": "Мероприятия",
+    "src": "/illustrations/initiatives/reading.svg"
+  },
+  {
+    "id": "science",
+    "label": "Наука и исследования",
+    "area": "IT",
+    "src": "/illustrations/initiatives/science.svg"
+  },
+  {
+    "id": "education",
+    "label": "Учёба и наставничество",
+    "area": "Мероприятия",
+    "src": "/illustrations/initiatives/education.svg"
+  },
+  {
+    "id": "history",
+    "label": "История и наследие",
+    "area": "Мероприятия",
+    "src": "/illustrations/initiatives/history.svg"
+  },
+  {
+    "id": "tourism",
+    "label": "Походы и маршруты",
+    "area": "Мероприятия",
+    "src": "/illustrations/initiatives/tourism.svg"
+  },
+  {
+    "id": "photography",
+    "label": "Фотография",
+    "area": "Медиа",
+    "src": "/illustrations/initiatives/photography.svg"
+  },
+  {
+    "id": "video",
+    "label": "Видео и кино",
+    "area": "Медиа",
+    "src": "/illustrations/initiatives/video.svg"
+  },
+  {
+    "id": "journalism",
+    "label": "Журналистика",
+    "area": "Медиа",
+    "src": "/illustrations/initiatives/journalism.svg"
+  },
+  {
+    "id": "design",
+    "label": "Дизайн и визуальная культура",
+    "area": "Медиа",
+    "src": "/illustrations/initiatives/design.svg"
+  },
+  {
+    "id": "podcast",
+    "label": "Подкасты и звук",
+    "area": "Медиа",
+    "src": "/illustrations/initiatives/podcast.svg"
+  },
+  {
+    "id": "coding",
+    "label": "Программирование",
+    "area": "IT",
+    "src": "/illustrations/initiatives/coding.svg"
+  },
+  {
+    "id": "robotics",
+    "label": "Робототехника",
+    "area": "IT",
+    "src": "/illustrations/initiatives/robotics.svg"
+  },
+  {
+    "id": "apps",
+    "label": "Сайты и приложения",
+    "area": "IT",
+    "src": "/illustrations/initiatives/apps.svg"
+  },
+  {
+    "id": "security",
+    "label": "Цифровая безопасность",
+    "area": "IT",
+    "src": "/illustrations/initiatives/security.svg"
+  },
+  {
+    "id": "community",
+    "label": "Городские сообщества",
+    "area": "Мероприятия",
+    "src": "/illustrations/initiatives/community.svg"
+  }
+]

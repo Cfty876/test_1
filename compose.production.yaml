@@ -1,0 +1,100 @@
+name: pervik-production
+x-logging: &logging
+  driver: json-file
+  options: {max-size: '10m', max-file: '3'}
+services:
+  database:
+    image: postgres:17-bookworm@sha256:839fbb5a4942a7758dd93e18b42ea5649807491a0545b5eeeb8f0b8bb11857a5
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: pervik
+      POSTGRES_USER: pervik
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the production env file}
+    command: ['postgres', '-c', 'max_connections=40', '-c', 'shared_buffers=128MB', '-c', 'work_mem=4MB', '-c', 'idle_in_transaction_session_timeout=30000']
+    volumes:
+      - database:/var/lib/postgresql/data
+      - ./docker/schema.sql:/docker-entrypoint-initdb.d/001-platform.sql:ro
+    networks: [backplane]
+    shm_size: 128m
+    mem_limit: 1g
+    cpus: 1
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U pervik -d pervik']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    stop_grace_period: 30s
+    logging: *logging
+  app:
+    build: .
+    restart: unless-stopped
+    env_file: ${PERVIK_PRODUCTION_ENV:-.env.production.local}
+    environment:
+      NODE_ENV: production
+      NODE_OPTIONS: --max-old-space-size=768
+      DATABASE_URL: postgresql://pervik:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@database:5432/pervik
+      AUTH_COOKIE_SECURE: 'true'
+      TRUST_PROXY: private
+      RATE_LIMIT_ENABLED: 'true'
+      DB_POOL_MAX: 8
+      DB_QUEUE_MAX: 128
+    depends_on:
+      database: {condition: service_healthy}
+    networks: [backplane, edge]
+    read_only: true
+    tmpfs: ['/tmp:size=64m,mode=1777']
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    init: true
+    mem_limit: 1g
+    cpus: 2
+    stop_grace_period: 30s
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/readyz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 6s
+      retries: 5
+      start_period: 60s
+    logging: *logging
+  edge:
+    image: caddy:2-alpine@sha256:e70b164da81ef698b3ad19af799ea6086ce6d9e48ed4079eb9fe26f6fbf14ee5
+    restart: unless-stopped
+    environment:
+      PERVIK_DOMAIN: ${PERVIK_DOMAIN:?Set the real domain}
+      TLS_EMAIL: ${TLS_EMAIL:?Set certificate email}
+    ports: ['80:80', '443:443', '443:443/udp']
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - certificates:/data
+      - caddy_config:/config
+    networks: [edge]
+    depends_on:
+      app: {condition: service_healthy}
+    mem_limit: 256m
+    logging: *logging
+  backup:
+    image: postgres:17-bookworm@sha256:839fbb5a4942a7758dd93e18b42ea5649807491a0545b5eeeb8f0b8bb11857a5
+    restart: unless-stopped
+    env_file: ${PERVIK_PRODUCTION_ENV:-.env.production.local}
+    environment:
+      PGHOST: database
+      PGDATABASE: pervik
+      PGUSER: pervik
+    entrypoint: [sh, /opt/pervik/backup.sh]
+    volumes:
+      - ./docker/backup.sh:/opt/pervik/backup.sh:ro
+      - ./data/backups/production:/backups
+    networks: [backplane]
+    depends_on:
+      database: {condition: service_healthy}
+    read_only: true
+    tmpfs: ['/tmp:size=16m,mode=1777']
+    mem_limit: 128m
+    logging: *logging
+networks:
+  backplane: {internal: true}
+  edge:
+volumes:
+  database:
+  certificates:
+  caddy_config:

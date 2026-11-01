@@ -27,6 +27,7 @@ export default defineConfig(({ mode }) => {
       },
     },
     server: {
+      fs: { deny: ['.env', '.env.*', '**/.env*', '**/*.env', '**/.git/**', '**/.codex/**', '**/.aistudio/**', '**/data/**', '*.{crt,pem}'] },
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modify—file watching is disabled to prevent flickering during agent edits.
       hmr: process.env.DISABLE_HMR !== 'true',
