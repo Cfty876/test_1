@@ -119,8 +119,6 @@
 .admin-quick-links strong { font-weight: 400; font-size: 16px; line-height: 1.5; }
 .admin-quick-links small { font-size: 14px; color: var(--cabinet-muted); line-height: 1.45; margin-top: 3px; }
 .admin-quick-links > button:hover strong { text-decoration: underline; text-underline-offset: 4px; }
-.admin-running > strong { display: block; font-family: var(--font-text); font-size: 40px; font-weight: 400; line-height: 1.2; margin: 12px 0 6px; }
-.admin-running p { margin: 0; color: var(--cabinet-muted); font-size: 14px; line-height: 1.5; }
 .admin-start-guide { background: var(--cabinet-surface); border-radius: 10px; padding: 20px; }
 .admin-start-guide > svg { margin-bottom: 12px; color: var(--cabinet-muted); }
 .admin-start-guide p { font-size: 15px; line-height: 1.6; color: var(--cabinet-muted); margin: 12px 0 16px; }

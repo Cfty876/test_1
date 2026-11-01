@@ -108,12 +108,13 @@ test(db ? 'PostgreSQL: complete platform workflows and concurrent decisions' : '
    assert.equal((await req('platform/profile',profile,school)).status,409);
    const profiles=await req('platform/profiles',undefined,curator);assert.equal(profiles.status,200);assert.ok(profiles.body.some((p:any)=>p.id===schoolUser.id&&p.email===profile.email));
   });
-  await t.test('school takes a project, city chair approves it, dates appear in calendar',async()=>{
+  await t.test('school proposes a project; ordinary curator sees it, approves and manages recruitment',async()=>{
    const dates={startDate:'2026-10-30',endDate:'2026-10-30'};
    const proposed=await req('platform/implementation-propose',{initiativeId:app.id,scope:'school',plan:'Проведём школьную мастерскую вместе с командой активистов.',...dates},school);assert.equal(proposed.status,201);implementation=proposed.body.implementation;
    assert.equal((await req('platform/implementation-manage',{id:implementation.id,version:implementation.version,status:'active',activistSlots:1,volunteerSlots:1,...dates},school)).status,403);
-   assert.equal((await req('platform/council-access',{id:curatorUser.id,version:1,branch:'Тестовая школа',councilStatus:'Председатель Екатеринбурга'})).status,200);
+   const overview=await req('platform/bootstrap',undefined,curator);assert.ok(overview.body.implementations.some((i:any)=>i.id===implementation.id));assert.notEqual(overview.body.currentUser.councilStatus,'Председатель Екатеринбурга');
    const approved=await req('platform/implementation-manage',{id:implementation.id,version:implementation.version,status:'active',activistSlots:1,volunteerSlots:1,...dates},curator);assert.equal(approved.status,200);implementation=approved.body.implementation;
+   const adjusted=await req('platform/implementation-manage',{id:implementation.id,version:implementation.version,status:'active',activistSlots:1,volunteerSlots:2,...dates},curator);assert.equal(adjusted.status,200);implementation=adjusted.body.implementation;assert.equal(implementation.volunteerSlots,2);
    const hub=await req('platform/member-hub',undefined,school);assert.ok(hub.body.calendar.some((e:any)=>e.id===implementation.id&&e.startDate===dates.startDate));
   });
   await t.test('concurrent moderation cannot overbook an implementation',async()=>{
@@ -125,9 +126,13 @@ test(db ? 'PostgreSQL: complete platform workflows and concurrent decisions' : '
    const upload=await fetch(`${origin}/api/platform/implementation-photo`,{method:'POST',headers:{cookie:school,'Content-Type':'image/png','X-Implementation-Id':implementation.id},body:png});assert.equal(upload.status,201);photo=await upload.json();
    assert.equal((await fetch(`${origin}/api/platform/implementation-photo?id=${photo.id}`)).status,401);
    const viewed=await fetch(`${origin}/api/platform/implementation-photo?id=${photo.id}`,{headers:{cookie:admin}});assert.equal(viewed.status,200);assert.deepEqual(Buffer.from(await viewed.arrayBuffer()),png);
+   const curatorPhoto=await fetch(`${origin}/api/platform/implementation-photo?id=${photo.id}`,{headers:{cookie:curator}});assert.equal(curatorPhoto.status,200);assert.deepEqual(Buffer.from(await curatorPhoto.arrayBuffer()),png);
+   const curatorView=await req('platform/bootstrap',undefined,curator);assert.ok(curatorView.body.implementationPhotos.some((p:any)=>p.id===photo.id));
    const report=await req('platform/implementation-report',{id:implementation.id,version:implementation.version,eventDate:'2026-10-30',description:'Провели мастерскую, собрали команду и подготовили полезные школьные проекты.',links:['https://vk.com/wall-123_456'],photoIds:[photo.id]},school);assert.equal(report.status,200);implementation=report.body.implementation;
    assert.equal((await req('platform/implementation-review',{id:implementation.id,version:implementation.version,decision:'completed'},school)).status,403);
-   const reviewed=await req('platform/implementation-review',{id:implementation.id,version:implementation.version,decision:'completed'});assert.equal(reviewed.status,200);implementation=reviewed.body.implementation;
+   const returned=await req('platform/implementation-review',{id:implementation.id,version:implementation.version,decision:'changes_requested',note:'Добавьте подробности о результатах мастерской.'},curator);assert.equal(returned.status,200);implementation=returned.body.implementation;
+   const revised=await req('platform/implementation-report',{id:implementation.id,version:implementation.version,eventDate:'2026-10-30',description:'Дополнили результаты мастерской и уточнили количество участников школьной команды.',links:['https://vk.com/wall-123_456'],photoIds:[photo.id]},school);assert.equal(revised.status,200);implementation=revised.body.implementation;
+   const reviewed=await req('platform/implementation-review',{id:implementation.id,version:implementation.version,decision:'completed'},curator);assert.equal(reviewed.status,200);implementation=reviewed.body.implementation;assert.equal(implementation.reviewedBy.login,curatorUser.login);
   });
   await t.test('merit claims: evidence validation, duplicate prevention, concurrent approval and reversal',async()=>{
    assert.equal((await req('platform/merit-claim',{kind:'vk',evidence:'https://evil.invalid/post',description:'Публикация о нашей работе.'},school)).status,400);

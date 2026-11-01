@@ -1,5 +1,6 @@
 /* Shared workspace geometry; school and curator tones use the same controls. */
 .platform-shell .council-workspace { --council-ink:#25262b; --council-muted:#62636d; --council-line:#e5e5e2; --council-accent:#c90029; --council-surface:#fff; background:#f7f7f4; color:var(--council-ink); font-family:var(--font-text); }
+.platform-shell .council-workspace.school-portal { --council-ink:var(--school-ink); --council-muted:var(--school-muted); --council-line:var(--school-line); --council-accent:var(--school-red); --cabinet-ink:var(--school-ink); --cabinet-muted:var(--school-muted); --cabinet-line:var(--school-line); --cabinet-ground:var(--school-paper); --cabinet-surface:var(--school-white); --cabinet-accent:var(--school-red); background:var(--school-paper); }
 .platform-shell .platform-dashboard.council-workspace { padding:0; width:100%; max-width:none; margin:0; min-height:calc(100dvh - var(--topbar-height,64px)); }
 .platform-shell .council-workspace :is(button,input,select,textarea,a) { font-family:var(--font-text); }
 .platform-shell .council-workspace :is(button,a,input,select,textarea):focus-visible { outline:3px solid #a80023; outline-offset:3px; }
@@ -26,6 +27,8 @@
 .platform-shell .council-workspace[data-council-tone=school] .council-sidebar { background:#df002b; border:0; color:#fff; }
 .council-workspace[data-council-tone=school] .council-sidebar nav button:hover { background:#ffffff18; }
 .council-workspace[data-council-tone=school] .council-sidebar nav button[aria-current] { background:#fff; color:#b60026; }
+.platform-shell .council-workspace[data-council-tone=school] .council-sidebar :is(button,a):focus-visible { outline-color:var(--school-yellow); outline-offset:-3px; }
+.platform-shell .council-workspace[data-council-tone=school] .council-sidebar button[aria-current]:focus-visible { outline-color:var(--school-ink); }
 .council-workspace[data-council-tone=school] .council-sidebar-footer { display:none; }
 .platform-shell .council-workspace :is(.school-main,.cabinet-content) { min-width:0; width:100%; padding:28px clamp(24px,3vw,44px) 44px; }
 .platform-shell .council-workspace .cabinet-container { width:100%; max-width:1280px; padding:0; margin:0 auto; }
@@ -61,9 +64,39 @@
 .council-menu-dialog nav button[aria-current] { background:#f0f0ed; color:#a50020; }
 .council-menu-dialog nav b { font-size:13px; }
 .council-menu-help { display:flex; gap:10px; align-items:center; padding:14px 12px; margin-top:16px; border-top:1px solid #e5e5e2; width:100%; }
+.platform-shell .staff-workspace .cabinet-content { max-width:1440px; margin-inline:auto; }
+.platform-shell .staff-workspace .cabinet-container { display:flex; flex-direction:column; max-width:none; }
+.platform-shell .staff-workspace .cabinet-messages { order:2; margin:24px 0 0; }
+.platform-shell .staff-workspace .cabinet-messages>details { background:var(--school-white); border-radius:var(--school-radius); }
+.platform-shell .staff-workspace .cabinet-heading>.staff-heading-actions { display:flex; flex:0 0 auto; gap:8px; }
+.staff-heading-actions .school-help-icon { margin:0; }
+.platform-shell .staff-workspace .admin-home { display:grid; grid-template-columns:minmax(0,1.6fr) minmax(250px,1fr); gap:var(--school-gap); margin-top:var(--school-gap); }
+.platform-shell .staff-workspace :is(.admin-home-main,.admin-home-side) { grid-column:auto; min-width:0; }
+.platform-shell .staff-workspace .admin-home-side { display:flex; flex-direction:column; gap:var(--school-gap); }
+.platform-shell .staff-workspace .admin-home-side>section { box-shadow:none; }
+.platform-shell .staff-workspace .admin-work-queue { margin:0 0 var(--school-gap); border-color:var(--school-line); border-radius:var(--school-radius); }
+.platform-shell .staff-workspace .admin-queue-heading { padding:24px; background:var(--school-white); }
+.platform-shell .staff-workspace .admin-queue-heading h2 { font:700 21px/1.4 var(--font-display); }
+.platform-shell .staff-workspace .admin-task { padding:18px 24px; background:var(--school-white); border-color:var(--school-line); }
+.platform-shell .staff-workspace .admin-task:hover { background:var(--school-paper); }
+.platform-shell .staff-workspace .admin-task[data-pending=true] b { color:var(--school-red); }
+.platform-shell .staff-workspace .admin-quick-links { border:0; border-radius:var(--school-radius); background:var(--school-blue); }
+.platform-shell .staff-workspace .admin-quick-links>button+button { border-top:1px solid #27282c25; }
+.platform-shell .staff-workspace .admin-quick-links small { color:#425d77; }
+.platform-shell .staff-workspace .admin-start-guide { border:1px solid var(--school-line); border-radius:var(--school-radius); background:var(--school-white); }
+.platform-shell .staff-workspace .cabinet-heading h1 { font-size:clamp(26px,2.6vw,38px); line-height:1.22; margin:0; }
+.platform-shell .staff-workspace .cabinet-heading p { margin-top:10px; }
+.platform-shell .staff-workspace :is(.cabinet-overview,.cabinet-record,.cabinet-request,.cover-manager,.homepage-editor,.cabinet-context-help) { border-radius:16px; }
+.platform-shell .staff-workspace .cabinet-context-help { background:var(--school-white); border:1px solid var(--school-line); }
+.platform-shell .staff-workspace :is(.cabinet-button-primary,.cabinet-segments button[aria-pressed=true]) { background:var(--school-red); color:var(--school-white); border-color:var(--school-red); }
+.platform-shell .staff-workspace .cabinet-overview>div { background:var(--school-white); }
+.platform-shell .staff-workspace .cabinet-overview>div:nth-child(2) { background:var(--school-yellow); }
+.platform-shell .staff-workspace .cabinet-overview>div:nth-child(3) { background:var(--school-blue); }
 @media(max-width:1100px) {
   .platform-shell .council-workspace :is(.school-layout,.cabinet-layout) { grid-template-columns:210px minmax(0,1fr); }
   .platform-shell .council-workspace :is(.school-main,.cabinet-content) { padding-inline:24px; }
+  .platform-shell .staff-workspace .admin-home { grid-template-columns:minmax(0,1fr); }
+  .platform-shell .staff-workspace .admin-home-side { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; }
 }
 @media(max-width:900px) {
   .platform-shell:has(.council-workspace) { --mobile-nav-height:calc(76px + env(safe-area-inset-bottom,0px)); }
@@ -166,9 +199,6 @@
   .platform-shell .council-workspace .implementation-team { display:flex; flex-wrap:wrap; gap:12px; }
   .platform-shell .council-workspace .journey-actions { display:flex; flex-wrap:wrap; gap:10px; }
   .platform-shell .council-workspace .journey-actions>button { flex:1 1 180px; min-height:48px; }
-  .platform-shell .council-workspace .school-project-intro { display:flex; flex-wrap:wrap; gap:12px; padding:18px; }
-  .platform-shell .council-workspace .school-project-intro p { flex:1 1 200px; font-size:14px; line-height:1.65; }
-  .platform-shell .council-workspace .school-project-intro button { width:100%; justify-content:space-between; }
   .platform-shell:has(.council-workspace) .profile-photo { flex-wrap:wrap; gap:18px; }
   .platform-shell:has(.council-workspace) .profile-contacts { grid-template-columns:1fr; }
   .platform-shell:has(.council-workspace) .profile-contacts input { font-size:16px; min-height:48px; }
@@ -232,8 +262,26 @@
   .platform-shell .council-workspace.school-portal .school-person-avatar { width:44px; height:44px; font-size:15px; }
   .platform-shell .council-workspace.school-portal .school-person-card h2 { font-size:17px; }
   .platform-shell .council-workspace.school-portal .school-person-open { padding-top:10px; }
-  .platform-shell .council-workspace.school-portal .school-project-intro { padding:14px; gap:8px; }
-  .platform-shell .council-workspace.school-portal .school-project-intro>svg { display:none; }
-  .platform-shell .council-workspace.school-portal .school-project-intro>button { margin-left:0; }
   .platform-shell .council-workspace .council-bottom-nav>button>span:last-child { white-space:normal; overflow-wrap:anywhere; text-align:center; }
+  .platform-shell .staff-workspace .admin-home { margin-top:16px; gap:16px; }
+  .platform-shell .staff-workspace .admin-home-side { grid-template-columns:minmax(0,1fr); gap:16px; }
+  .platform-shell .staff-workspace .admin-work-queue { margin-bottom:16px; border-radius:16px; }
+  .platform-shell .staff-workspace .admin-queue-heading { padding:16px; }
+  .platform-shell .staff-workspace .admin-queue-heading h2 { font-size:18px; }
+  .platform-shell .staff-workspace .admin-task { padding:14px 16px; grid-template-columns:minmax(0,1fr) 30px 18px; gap:10px; }
+  .platform-shell .staff-workspace .admin-task>svg:first-child { display:none; }
+  .platform-shell .staff-workspace .cabinet-heading h1 { font-size:24px; }
+  .platform-shell .staff-workspace .admin-recent-row { grid-template-columns:minmax(0,1fr) auto; gap:8px; }
+  .platform-shell .staff-workspace .admin-recent-row>svg { display:none; }
 }
+
+/* Help has one viewport scroll area. The card never creates a second scrollbar. */
+.platform-shell .council-workspace .cabinet-dialog.council-help-dialog { overflow:auto; overscroll-behavior:contain; scrollbar-width:none; }
+.platform-shell .council-workspace .cabinet-dialog.council-help-dialog::-webkit-scrollbar { display:none; }
+.platform-shell .council-workspace .cabinet-dialog.council-help-dialog[open] { display:flex; flex-direction:column; align-items:center; justify-content:flex-start; }
+.platform-shell .council-workspace .cabinet-dialog.council-help-dialog>.workflow-dialog { flex:none; margin-block:auto; min-height:0; max-height:none; overflow:visible; scrollbar-gutter:auto; }
+.platform-shell .council-workspace .council-help-dialog .workflow-dialog-heading { position:static; top:auto; margin-bottom:16px; }
+.platform-shell .council-workspace .school-help-dialog .school-help-steps { display:grid; gap:16px; margin:0 0 20px; padding-left:24px; }
+.platform-shell .council-workspace .school-help-dialog .school-help-steps strong { font-size:17px; line-height:1.4; }
+.platform-shell .council-workspace .school-help-dialog .school-help-steps p { margin:6px 0 0; font-size:15px; line-height:1.5; }
+.platform-shell .council-workspace .school-help-dialog .school-button { min-height:48px; }

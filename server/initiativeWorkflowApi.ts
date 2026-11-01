@@ -197,7 +197,7 @@ export async function handleInitiativeWorkflow(request: Request, response: Serve
     if (body.version !== target.version) return { state, result: { status: 409, error: 'Реализация уже изменилась. Обновите данные перед действием.' } };
     let updated: Implementation = { ...target, version: target.version + 1, updatedAt: new Date().toISOString() }; let next = state;
     if (route === '/implementation-manage') {
-      if (!canManageImplementation(actor, target)) return { state, result: { status: 403, error: 'Запуск подтверждают ответственный, председатель городского Совета или администратор.' } };
+      if (!canManageImplementation(actor, target)) return { state, result: { status: 403, error: 'Запуск подтверждают кураторы, председатель городского Совета или администратор.' } };
       if (!['proposed','active'].includes(target.status) || (body.status !== 'active' && body.status !== 'cancelled')) return { state, result: { status: 409, error: 'Недоступный переход статуса.' } };
       if (!validDateRange(body.startDate, body.endDate)) return { state, result: { status: 400, error: 'Укажите корректные даты проведения проекта.' } };
       const activistSlots = Number(body.activistSlots), volunteerSlots = Number(body.volunteerSlots);
@@ -224,9 +224,9 @@ export async function handleInitiativeWorkflow(request: Request, response: Serve
       if (description.length < 30 || description.length > 5000 || !validLinks || !validPhotos || !/^\d{4}-\d{2}-\d{2}$/.test(eventDate) || Number.isNaN(Date.parse(eventDate)) || new Date(eventDate).toISOString().slice(0,10) !== eventDate || eventDate > new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Yekaterinburg', year:'numeric',month:'2-digit',day:'2-digit' }).format(new Date())) return { state, result: { status: 400, error: 'Добавьте описание (30–5000 символов), дату проведения, 1–8 фотографий и 1–10 разных HTTPS-ссылок на публикации.' } };
       updated = { ...updated, status: 'report_pending', report: { description, links: links as string[], photoIds: photoIds as string[], eventDate, submittedAt: new Date().toISOString() }, reportHistory: target.report ? [...(target.reportHistory || []), { ...target.report, reviewNote: target.reviewNote }] : target.reportHistory, reviewNote: undefined };
       next = notify(changed(next, updated), updated, 'admin', `${target.ownerName} отправил фотоотчёт: «${target.initiativeTitle}», ${target.organization}.`);
-      next = notify(next, updated, 'author', `Реализация «${target.organization}» проведена. Отчёт передан администратору и председателю городского Совета на проверку.`);
+      next = notify(next, updated, 'author', `Реализация «${target.organization}» проведена. Отчёт передан кураторам, администратору и председателю городского Совета на проверку.`);
     } else if (route === '/implementation-review') {
-      if (!canOverseeImplementations(actor)) return { state, result: { status: 403, error: 'Результат проверяют администратор и председатель городского Совета.' } };
+      if (!canOverseeImplementations(actor)) return { state, result: { status: 403, error: 'Результат проверяют кураторы, администратор и председатель городского Совета.' } };
       const decision = body.decision; const note = typeof body.note === 'string' ? body.note.trim() : '';
       if (target.status !== 'report_pending' || (decision !== 'completed' && decision !== 'changes_requested')) return { state, result: { status: 409, error: 'Отчёт уже обработан или ещё не отправлен.' } };
       if (note.length > 1000 || (decision === 'changes_requested' && note.length < 10)) return { state, result: { status: 400, error: 'Объясните, что нужно доработать (10–1000 символов).' } };

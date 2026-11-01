@@ -14,9 +14,9 @@ export function canReviewAllApplications(user: { role: Role; canReviewApplicatio
 }
 export function isCuratorRoleInfo(roleInfo = ''): boolean { return /^куратор(?:\s|·|$)/iu.test(roleInfo.trim()); }
 
-/** A school chair is not the chair of the city council. Only the assigned city office grants oversight. */
-export function canOverseeImplementations(user: { role: Role; councilStatus?: string }): boolean {
-  return user.role === 'admin' || (user.role === 'chairman' && user.councilStatus === 'Председатель Екатеринбурга');
+/** Curators and the assigned city chair oversee projects; ordinary school chairs do not. */
+export function canOverseeImplementations(user: { role: Role; councilStatus?: string; canReviewApplications?: boolean }): boolean {
+  return user.role === 'admin' || (user.role === 'chairman' && (user.canReviewApplications === true || user.councilStatus === 'Председатель Екатеринбурга'));
 }
 export function canManageImplementation(user: { role: Role; login: string; councilStatus?: string; canReviewApplications?: boolean }, implementation: { ownerLogin: string }): boolean {
   return canOverseeImplementations(user) || (user.role === 'chairman' && user.login === implementation.ownerLogin && !isSchoolMember(user));

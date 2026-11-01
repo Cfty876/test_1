@@ -5,7 +5,7 @@ import { SchoolMemberPortal } from './SchoolMemberPortal.tsx';
 import { CommunityPanel } from './MemberCommunity.tsx';
 import { InitiativeCoverManager } from './InitiativeCoverPicker.tsx';
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Building2, ClipboardList, Database, Home, Lightbulb, RefreshCw, CalendarDays, Trophy, LayoutDashboard, ShieldCheck, Users, } from 'lucide-react';
+import { Bell, Building2, CircleHelp, ClipboardList, Database, Home, Lightbulb, Radio, RefreshCw, CalendarDays, Trophy, LayoutDashboard, ShieldCheck, Users, } from 'lucide-react';
 import { KeyIcon, CrossIcon, CopyIcon } from './Icons.tsx';
 import type { UserSession } from '../utils/auth.ts';
 import { HomepageEditor } from './HomepageEditor.tsx';
@@ -233,11 +233,12 @@ const StaffDashboardView: React.FC<DashboardViewProps> = ({
   };
 
   return (
-    <main className={`platform-dashboard cabinet-workspace cabinet-redesign staff-workspace council-workspace${isAdmin ? " is-admin" : " is-curator"}`} data-council-tone="curator">
+    <main className={`platform-dashboard cabinet-workspace cabinet-redesign school-portal staff-workspace council-workspace${isAdmin ? " is-admin" : " is-curator"}`} data-council-tone="school">
       <div className="cabinet-layout">
       <CouncilNavigation items={sections.map(id => ({ id, label: tabs[id].label, short: id === 'overview' ? 'Начало' : tabs[id].label, icon: tabs[id].icon, count: tabs[id].count }))} active={activeMainTab} onSelect={id => selectTab(id as CabinetSection)} tone="curator" primary={['overview','applications','implementations','ranking']} onHelp={() => setHelpOpen(true)} />
       <div className="cabinet-content"><div className="cabinet-container">
-        <header className="cabinet-heading"><div><span className="cabinet-location">Первик · Личный кабинет · {isAdmin ? 'Администратор' : canReviewAll ? 'Куратор' : overseesProjects ? 'Председатель городского Совета' : 'Председатель'}</span><h1 ref={pageTitle} tabIndex={-1}>{CABINET_COPY[activeMainTab].title}</h1><p>{CABINET_COPY[activeMainTab].description}</p><span className="cabinet-sync-status" role="status">{syncIssue ? 'Ожидаем подключения к серверу' : 'Автообновление включено'}</span></div><button type="button" className="cabinet-button" disabled={refreshing} onClick={() => void refresh()} aria-label="Обновить данные кабинета"><RefreshCw size={16} /><span>{refreshing ? 'Обновляем…' : 'Обновить'}</span></button></header>
+        <div className="school-context"><span>{isAdmin ? 'Администратор' : canReviewAll ? 'Куратор' : overseesProjects ? 'Председатель городского Совета' : 'Председатель'}</span><span className={`school-live${syncIssue ? ' is-offline' : ''}`} role="status"><Radio size={14} aria-hidden="true" />{syncIssue ? 'Нет связи' : 'На связи'}</span></div>
+        <header className="cabinet-heading school-page-header"><div><h1 ref={pageTitle} tabIndex={-1}>{CABINET_COPY[activeMainTab].title}</h1><p>{CABINET_COPY[activeMainTab].description}</p></div><div className="staff-heading-actions"><button type="button" className="school-help-icon" disabled={refreshing} onClick={() => void refresh()} aria-label={refreshing ? 'Обновляем данные кабинета' : 'Обновить данные кабинета'}><RefreshCw size={20} /></button><button type="button" className="school-help-icon" aria-label="Как работать в кабинете" onClick={() => setHelpOpen(true)}><CircleHelp size={23} /></button></div></header>
         {isAdmin && activeMainTab === 'overview' && <MaintenanceControl />}
         {syncIssue && <p className="inline-error" role="alert">{syncIssue}</p>}
         {activeMainTab !== 'overview' && <CabinetSectionHelp key={activeMainTab} section={activeMainTab} />}
@@ -287,20 +288,16 @@ const StaffDashboardView: React.FC<DashboardViewProps> = ({
       {/* Modal: Create Access (Admin only) */}
       {isAdmin && isCreateUserModalOpen && (
         <ModalDialog className="cabinet-dialog" labelledBy="create-access-title" onClose={() => setIsCreateUserModalOpen(false)} busy={isCreatingUser}>
-          <div className="cabinet-access-form relative w-full max-w-[520px] bg-[#FFFFFF] rounded-[16px] border border-[#E8EAEE] p-6 sm:p-8 shadow-2xl modal-animate z-10">
+          <div className="workflow-dialog cabinet-access-form">
+            <div className="workflow-dialog-heading"><h2 id="create-access-title">Добавить сотрудника</h2>
             <button
               type="button"
               onClick={() => setIsCreateUserModalOpen(false)}
               disabled={isCreatingUser}
               aria-label="Закрыть"
-              className="absolute top-5 right-5 w-8 h-8 rounded-[8px] flex items-center justify-center text-[#6B7280] hover:text-[#0F1115] hover:bg-[#F7F8FA] cursor-pointer"
             >
               <CrossIcon size={18} strokeWidth={2} />
-            </button>
-
-            <h3 id="create-access-title" className="text-[20px] font-bold text-[#0F1115] mb-1">
-              Добавить сотрудника
-            </h3>
+            </button></div>
             <p className="text-[13px] text-[#6B7280] mb-5">
               Укажите, кому нужен кабинет и что этот человек будет делать.
             </p>
@@ -338,7 +335,7 @@ const StaffDashboardView: React.FC<DashboardViewProps> = ({
                 </select>
               </div>
 
-              <p className="journey-hint">{newUserRole === 'Куратор района' ? 'Рассматривает заявки, публикует идеи, проверяет заявки на баллы и добавляет события в календарь. Не управляет сотрудниками и главной сайта.' : 'Видит людей и идеи, предлагает проекты с датами, отправляет отчёты и заявки на баллы. Видит рейтинг и календарь. Не модерирует общие заявки.'}</p>
+              <p className="journey-hint">{newUserRole === 'Куратор района' ? 'Рассматривает заявки, запускает все проекты, настраивает набор, проверяет фотоотчёты и баллы, добавляет события в календарь. Не управляет сотрудниками и главной сайта.' : 'Видит людей и идеи, предлагает проекты с датами, отправляет отчёты и заявки на баллы. Видит рейтинг и календарь. Не модерирует общие заявки.'}</p>
               <div>
                 <label htmlFor="access-branch" className="block text-[13px] font-medium text-[#0F1115] mb-1">
                   Школа или организация
