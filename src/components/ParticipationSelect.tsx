@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
-import { Building2, Camera, Check, ChevronDown, HeartHandshake, Laptop, Lightbulb, Mic, PencilLine, Presentation, type LucideIcon } from 'lucide-react';
+import { Camera, Check, ChevronDown, HeartHandshake, Laptop, Lightbulb, Mic, PencilLine, Presentation, type LucideIcon } from 'lucide-react';
 
 interface ParticipationOption {
   value: string;

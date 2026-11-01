@@ -2,7 +2,8 @@ import { ArrowRight, Check, ClipboardList, Lightbulb, Users } from 'lucide-react
 import type { ApplicationItem } from './DashboardView.tsx';
 import type { Implementation } from '../utils/implementations.ts';
 
-export function AdminWorkQueue({ applications, implementations, onApplications, onProjects }: {
+export function AdminWorkQueue({ canOversee, applications, implementations, onApplications, onProjects }: {
+  canOversee: boolean;
   applications: ApplicationItem[]; implementations: Implementation[];
   onApplications: (kind: 'initiative' | 'help') => void;
   onProjects: (filter: Implementation['status']) => void;
@@ -11,8 +12,8 @@ export function AdminWorkQueue({ applications, implementations, onApplications, 
   const tasks = [
     { title: 'Новые идеи', hint: 'Прочитать, выбрать обложку и решить, публиковать ли на сайте.', count: pending.filter(item => item.isInitiative).length, icon: Lightbulb, action: () => onApplications('initiative') },
     { title: 'Анкеты и отклики', hint: 'Принять человека в базу активистов или команду проекта.', count: pending.filter(item => !item.isInitiative).length, icon: Users, action: () => onApplications('help') },
-    { title: 'Проекты ждут запуска', hint: 'Проверить план, площадку и набор команды.', count: implementations.filter(item => item.status === 'proposed').length, icon: Lightbulb, action: () => onProjects('proposed') },
-    { title: 'Отчёты на проверке', hint: 'Посмотреть результаты и подтвердить завершение проекта.', count: implementations.filter(item => item.status === 'report_pending').length, icon: ClipboardList, action: () => onProjects('report_pending') },
+    ...(canOversee ? [{ title: 'Проекты ждут запуска', hint: 'Проверить план, площадку и набор команды.', count: implementations.filter(item => item.status === 'proposed').length, icon: Lightbulb, action: () => onProjects('proposed') },
+    { title: 'Отчёты на проверке', hint: 'Посмотреть результаты и подтвердить завершение проекта.', count: implementations.filter(item => item.status === 'report_pending').length, icon: ClipboardList, action: () => onProjects('report_pending') }] : []),
   ];
   const total = tasks.reduce((sum, task) => sum + task.count, 0);
   return <section className="admin-work-queue" aria-labelledby="admin-queue-title">

@@ -1,3 +1,4 @@
+import { INITIATIVE_DIRECTIONS, isInitiativeDirection, directionCover } from '../src/utils/initiativeDirections.ts';
 import { getSnapshot, saveSnapshot, snapshotNotModified } from './snapshotCache.ts';
 import { sendJson, readJsonBody } from './httpSupport.ts';
 import { makePasswordHash } from './passwords.ts';
@@ -40,7 +41,7 @@ function trackingHash(code: string): string {
 }
 function trackedSummary(application: StoredApplication, notifications: PlatformNotification[] = []): TrackedApplication {
   return {
-    id: application.id, status: application.status, category: application.category,
+    id: application.id, status: application.status, category: application.category, direction: application.direction,
     area: application.area || 'Мероприятия', description: application.description,
     helpAreas: application.helpAreas || [application.area || 'Мероприятия'],
     isInitiative: Boolean(application.isInitiative), version: application.version || 1,
@@ -86,7 +87,8 @@ function normalizeForm(body: Record<string, unknown>): Omit<ApplicationItem, 'id
   const category = typeof body.category === 'string' ? body.category.trim().slice(0, 120) : '';
   const customCategoryText = typeof body.customCategoryText === 'string' ? body.customCategoryText.trim().slice(0, 120) : '';
   const isInitiative = category === 'Есть своя инициатива';
-  const selectedArea = typeof body.helpArea === 'string' ? body.helpArea : '';
+  if (isInitiative && !isInitiativeDirection(body.direction)) return null;
+  const selectedArea = isInitiative ? INITIATIVE_DIRECTIONS.find(item => item.id === body.direction)!.area : typeof body.helpArea === 'string' ? body.helpArea : '';
   const isCustom = category.includes('Свой вариант');
   const area = isInitiative || isCustom || category === 'Хочу помочь инициативе' || category === 'Хочу быть активистом' ? selectedArea
     : category.includes('Медиа') ? 'Медиа' : category.includes('IT') ? 'IT' : category.includes('Волонтёр') ? 'Волонтёрство' : 'Мероприятия';
@@ -95,7 +97,7 @@ function normalizeForm(body: Record<string, unknown>): Omit<ApplicationItem, 'id
   if ((isInitiative || category === 'Хочу быть активистом' || category === 'Хочу помочь инициативе' || category.includes('Свой вариант')) && !AREAS.has(area)) return null;
   if (category.includes('Свой вариант') && !customCategoryText) return null;
   if (!/^[+\d\s().-]+$/u.test(phone) || phone.replace(/\D/g, '').length < 10 || phone.replace(/\D/g, '').length > 15) return null;
-  const helpAreas = body.helpAreas === undefined ? [area] : body.helpAreas;
+  const helpAreas = isInitiative || body.helpAreas === undefined ? [area] : body.helpAreas;
   if (!Array.isArray(helpAreas) || !helpAreas.length || helpAreas.length > 4 || helpAreas.some(value => typeof value !== 'string' || !AREAS.has(value)) || new Set(helpAreas).size !== helpAreas.length || !helpAreas.includes(area)) return null;
   if (isInitiative && helpAreas.length !== 1) return null;
   return {
@@ -103,6 +105,7 @@ function normalizeForm(body: Record<string, unknown>): Omit<ApplicationItem, 'id
     helpAreas,
     category: isCustom && customCategoryText ? `Свой: ${customCategoryText}` : category,
     isInitiative,
+    ...(isInitiative && isInitiativeDirection(body.direction) ? { direction: body.direction } : {}),
     area: AREAS.has(area) ? area : 'Мероприятия',
   };
 }
@@ -215,6 +218,7 @@ export function createPlatformApi(env: Environment) {
       if (route === '/applications' && method === 'POST') {
         const body = await readBody(request);
         if (!hasPrivacyAcknowledgement(body)) return send(response, 400, { error: PRIVACY_ACKNOWLEDGEMENT_ERROR });
+        if (body.category === 'Есть своя инициатива' && !isInitiativeDirection(body.direction)) return send(response, 400, { error: 'Выберите направление инициативы. Если форма открыта давно, обновите страницу — введённый черновик сохранён.' });
         const form = normalizeForm(body);
         if (!form) return send(response, 400, { error: 'Проверьте поля заявки и выбранную область помощи.' });
         const supportId = typeof body.supportInitiativeId === 'string' ? body.supportInitiativeId : '';
@@ -272,6 +276,7 @@ export function createPlatformApi(env: Environment) {
           return application ? send(response, 200, trackedSummary(application, state.notifications)) : send(response, 404, { error: 'Заявка с таким кодом не найдена. Проверьте код в сохранённом файле.' });
         }
         const description = typeof body.description === 'string' ? body.description.trim() : '';
+        if (body.action === 'revise' && body.direction !== undefined && !isInitiativeDirection(body.direction)) return send(response, 400, { error: 'Выберите направление инициативы.' });
         if (body.action === 'revise' && (description.length < 10 || description.length > 5000)) return send(response, 400, { error: 'Описание должно содержать от 10 до 5000 символов.' });
         const action = body.action;
         const result = await updatePlatformState<{ status: number; error?: string; application?: TrackedApplication }>((state) => {
@@ -281,7 +286,7 @@ export function createPlatformApi(env: Environment) {
           if ((action === 'revise' && target.status !== 'needs_changes') || (action === 'withdraw' && target.status !== 'pending' && target.status !== 'needs_changes')) return { state, result: { error: 'Это действие больше недоступно. Обновите статус заявки.', status: 409 } };
           const status = action === 'revise' ? 'pending' : 'withdrawn';
           const updated: StoredApplication = {
-            ...target, status, ...(action === 'revise' ? { description } : {}),
+            ...target, status, ...(action === 'revise' ? { description, ...(target.isInitiative && isInitiativeDirection(body.direction) ? { direction: body.direction } : {}) } : {}),
             version: (target.version || 1) + 1, updatedAt: new Date().toISOString(),
             history: [...(target.history || []), journeyEvent(status, 'participant', action === 'revise' ? 'Автор дополнил описание и отправил заявку на повторное рассмотрение.' : 'Автор отозвал заявку.')],
           };
@@ -330,6 +335,7 @@ export function createPlatformApi(env: Environment) {
         const body = await readBody(request);
         const id = typeof body.id === 'string' ? body.id : '';
         const coverId = body.coverId;
+        if (body.direction !== undefined && !isInitiativeDirection(body.direction)) return send(response, 400, { error: 'Выберите направление инициативы.' });
         if (!isInitiativeCoverId(coverId) || !Number.isSafeInteger(body.version) || Number(body.version) < 0) return send(response, 400, { error: 'Выберите обложку из библиотеки и обновите данные инициативы.' });
         const published = await readPublishedInitiatives(env);
         if (!published.some(item => item.id === id)) return send(response, 404, { error: 'Опубликованная инициатива не найдена.' });
@@ -338,8 +344,8 @@ export function createPlatformApi(env: Environment) {
           if (application && (!application.isInitiative || application.status !== 'accepted')) return { state, result: { status: 404, error: 'Инициатива больше не опубликована.' } };
           const previous = state.initiativeCovers.find(item => item.initiativeId === id);
           if ((previous?.version || 0) !== body.version) return { state, result: { status: 409, error: 'Обложка уже изменена. Обновите кабинет и выберите заново.' } };
-          const cover = { initiativeId: id, coverId, version: (previous?.version || 0) + 1 };
-          return { state: { ...state, initiativeCovers: [...state.initiativeCovers.filter(item => item.initiativeId !== id), cover] }, result: { status: 200, error: '' } };
+          const cover = { initiativeId: id, coverId, direction: isInitiativeDirection(body.direction) ? body.direction : previous?.direction, version: (previous?.version || 0) + 1 };
+          return { state: { ...state, applications: state.applications.map(item => item.id === id && item.isInitiative && isInitiativeDirection(body.direction) && item.direction !== body.direction ? { ...item, direction: body.direction, version: (item.version || 1) + 1, updatedAt: new Date().toISOString(), history: [...(item.history || []), journeyEvent(item.status, user.role === 'admin' ? 'admin' : 'curator', 'Команда уточнила направление инициативы.')] } : item), initiativeCovers: [...state.initiativeCovers.filter(item => item.initiativeId !== id), cover] }, result: { status: 200, error: '' } };
         }, env);
         return send(response, result.status, result.error ? { error: result.error } : { saved: true });
       }
@@ -351,6 +357,7 @@ export function createPlatformApi(env: Environment) {
         const id = typeof body.id === 'string' ? body.id : '';
         const status = body.status;
         if (!id || (status !== 'accepted' && status !== 'rejected' && status !== 'needs_changes')) return send(response, 400, { error: 'Неверный статус заявки.' });
+        if (body.direction !== undefined && !isInitiativeDirection(body.direction)) return send(response, 400, { error: 'Выберите направление инициативы.' });
         if (body.coverId !== undefined && !isInitiativeCoverId(body.coverId)) return send(response, 400, { error: 'Выберите доступную обложку из библиотеки.' });
         if (!Number.isSafeInteger(body.version) || Number(body.version) < 1) return send(response, 400, { error: 'Обновите кабинет перед рассмотрением заявки.' });
         const nextStatus: ApplicationItem['status'] = status;
@@ -379,7 +386,7 @@ export function createPlatformApi(env: Environment) {
             if (!implementation || implementation.status !== 'active' || count >= (target.participationRole === 'activist' ? implementation.activistSlots : implementation.volunteerSlots)) throw new Error('RECRUITMENT_CLOSED');
           }
           const updated: StoredApplication = target.status === nextStatus ? target : {
-            ...target, status: nextStatus, version: (target.version || 1) + 1, updatedAt: new Date().toISOString(),
+            ...target, ...(target.isInitiative && isInitiativeDirection(body.direction) ? { direction: body.direction } : {}), status: nextStatus, version: (target.version || 1) + 1, updatedAt: new Date().toISOString(),
             history: [...(target.history || []), { ...journeyEvent(nextStatus, user.role === 'admin' ? 'admin' : canReviewAllApplications(user) ? 'curator' : 'organizer', reason || (target.isInitiative ? 'Инициатива одобрена и опубликована на доске.' : 'Заявка одобрена и передана команде Совета.')), actorName: user.name }],
           };
           const applications = state.applications.map((item) => item.id === id ? updated : item);
@@ -394,7 +401,7 @@ export function createPlatformApi(env: Environment) {
           return {
             state: { ...state, applications, baseMembers, notifications,
               initiativeCovers: target.isInitiative && nextStatus === 'accepted' && target.status !== 'accepted'
-                ? [...state.initiativeCovers.filter(item => item.initiativeId !== id), { initiativeId: id, coverId: isInitiativeCoverId(body.coverId) ? body.coverId : initiativeCover({ area: target.area || 'Мероприятия' }).id, version: (state.initiativeCovers.find(item => item.initiativeId === id)?.version || 0) + 1 }]
+                ? [...state.initiativeCovers.filter(item => item.initiativeId !== id), { initiativeId: id, coverId: isInitiativeCoverId(body.coverId) ? body.coverId : initiativeCover({ area: target.area || 'Мероприятия', coverId: directionCover(updated.direction) }).id, version: (state.initiativeCovers.find(item => item.initiativeId === id)?.version || 0) + 1 }]
                 : state.initiativeCovers,
             },
             result: { application: applicationSummary(updated), member: baseMembers.find((item) => item.id === `base-${target.id}`) ?? null },

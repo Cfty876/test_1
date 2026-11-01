@@ -1,3 +1,4 @@
+import { isInitiativeDirection, type InitiativeDirection } from './utils/initiativeDirections.ts';
 import { useLiveRefresh } from './utils/useLiveRefresh.ts';
 import { subscribePlatformChanges } from './utils/liveSync.ts';
 import { PlatformApiError } from './utils/platformApi.ts';
@@ -57,6 +58,7 @@ export default function App() {
   const [receipt, setReceipt] = useState<ApplicationReceipt | null>(readReceipt);
   const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [initialDirection, setInitialDirection] = useState<InitiativeDirection>(() => { const value = new URLSearchParams(location.search).get('direction'); return isInitiativeDirection(value) ? value : 'education'; });
   const [initialHelpArea, setInitialHelpArea] = useState<HelpArea>('Мероприятия');
   const [toast, setToast] = useState<ToastMessage | null>(null);
 
@@ -87,7 +89,7 @@ export default function App() {
     else url.searchParams.set('view', view);
     if (view === 'initiative' && supportId) url.searchParams.set('initiative', supportId);
     else url.searchParams.delete('initiative');
-    for (const key of ['q', 'area', 'team', 'sort']) url.searchParams.delete(key);
+    for (const key of ['q', 'area', 'team', 'sort', 'direction']) url.searchParams.delete(key);
     url.hash = '';
     if (view !== 'cabinet') url.searchParams.delete('section');
     if (view === 'form') url.searchParams.set('kind', supportId ? 'activist' : kind);
@@ -253,6 +255,7 @@ export default function App() {
   };
 
   const handleGoToForm = (area?: HelpArea, initiative?: PublicInitiative, implementation?: PublicImplementation, kind?: 'initiative' | 'activist') => {
+    setInitialDirection('education');
     setInitialHelpArea(area ?? 'Мероприятия');
     navigate('form', initiative?.id, implementation?.id, kind || (area ? 'activist' : 'initiative'));
   };
@@ -292,12 +295,12 @@ export default function App() {
   };
 
   // Handlers for cabinet actions
-  const handleReviewApplication = async (id: string, status: 'accepted' | 'rejected' | 'needs_changes', reason: string, version?: number, coverId?: string) => {
+  const handleReviewApplication = async (id: string, status: 'accepted' | 'rejected' | 'needs_changes', reason: string, version?: number, coverId?: string, direction?: InitiativeDirection) => {
     if (applicationLocks.current.has(id)) throw new Error('Решение уже сохраняется.');
     applicationLocks.current.add(id);
     setProcessingApplications([...applicationLocks.current]);
     try {
-      const result = await platformRequest<{ application: ApplicationItem; member: BaseMember | null }>('/applications/status', { id, status, reason, version, coverId });
+      const result = await platformRequest<{ application: ApplicationItem; member: BaseMember | null }>('/applications/status', { id, status, reason, version, coverId, direction });
       setApplications((previous) => previous.map((item) => item.id === id ? result.application : item));
       if (result.member) setBaseMembers((previous) => [result.member as BaseMember, ...previous.filter((item) => item.id !== result.member?.id)]);
       if (status === 'accepted' && result.application.isInitiative) setPublicRevision((value) => value + 1);
@@ -363,7 +366,7 @@ export default function App() {
     const title = currentView === 'initiative' ? publishedInitiatives.find(item => item.id === initiativeId)?.title || 'Инициатива'
       : currentView === 'initiatives' ? 'Все инициативы' : currentView === 'cabinet' ? 'Личный кабинет'
       : currentView === 'form' ? (new URLSearchParams(location.search).get('kind') === 'activist' ? 'Анкета активиста' : 'Предложить инициативу') : currentView === 'track' ? 'Моя заявка' : '';
-    document.title = title ? `${title} — Первик · Совет Екатеринбурга` : 'Движение Первых — Совет Екатеринбурга';
+    document.title = title ? `${title} — Первик · Совет Первых местного отделения города Екатеринбург` : 'Движение Первых — Совет Первых местного отделения города Екатеринбург';
   }, [currentView, initiativeId, publishedInitiatives]);
   const backFromForm = () => resolvedSupport ? navigate('initiative', resolvedSupport.id) : handleGoHome();
   const mobileNavigation = currentView !== 'form';
@@ -401,7 +404,7 @@ export default function App() {
       {currentView === 'not-found' && <NotFoundView />}
       {/* Screen 1: Home */}
       {currentView === 'home' && (
-        <HomeView onOpenInitiative={openInitiative} onCatalog={openIdeas} likedIds={likedIds} likingId={likingId} onLike={handleLike} onTrack={() => { setReceipt(readReceipt()); navigate('track'); }} onActivist={() => handleGoToForm(undefined, undefined, undefined, 'activist')} onGoToForm={handleGoToForm} onOpenLogin={handleOpenLogin} featuredInitiatives={featuredInitiatives} featuredLoadError={featuredLoadError} />
+        <HomeView onDirection={direction => { handleGoToForm(); setInitialDirection(direction); const url = new URL(location.href); url.searchParams.set('direction', direction); history.replaceState(history.state, '', url); }} onOpenInitiative={openInitiative} onCatalog={openIdeas} likedIds={likedIds} likingId={likingId} onLike={handleLike} onTrack={() => { setReceipt(readReceipt()); navigate('track'); }} onActivist={() => handleGoToForm(undefined, undefined, undefined, 'activist')} onGoToForm={handleGoToForm} onOpenLogin={handleOpenLogin} featuredInitiatives={featuredInitiatives} featuredLoadError={featuredLoadError} />
       )}
 
       {currentView === 'initiatives' && <InitiativeCatalog initiatives={publishedInitiatives} loading={publicLoading} loadError={publicLoadError} onRetry={() => setPublicRevision(value => value + 1)} likedIds={likedIds} likingId={likingId} onLike={handleLike} onOpen={openInitiative} onStart={() => handleGoToForm()} onHome={handleGoHome} />}
@@ -411,11 +414,12 @@ export default function App() {
       {currentView === 'form' && unavailableSupport && <main className="cabinet-load-state" aria-live="polite"><h1>{publicLoading ? 'Загружаем инициативу…' : 'Не удалось открыть инициативу'}</h1>{!publicLoading && <><p>Открой каталог и выбери доступную инициативу.</p><button type="button" className="home-primary" onClick={handleGoHome}>На главную</button></>}</main>}
       {currentView === 'form' && !unavailableSupport && (
         <ApplicationFormView
-          key={`${new URLSearchParams(location.search).get('kind')}:${resolvedSupport?.id || 'general'}:${resolvedImplementation?.id || 'general'}`}
+          key={`${new URLSearchParams(location.search).get('kind')}:${resolvedSupport?.id || 'general'}:${resolvedImplementation?.id || 'general'}:${new URLSearchParams(location.search).get('direction') || ''}`}
           mode={new URLSearchParams(location.search).get('kind') === 'activist' ? 'activist' : 'initiative'}
           onGoHome={backFromForm}
           backLabel={resolvedSupport ? 'К инициативе' : 'На главную'}
           onSubmitSuccess={handleFormSubmitSuccess}
+          initialDirection={(() => { const value = new URLSearchParams(location.search).get('direction'); return isInitiativeDirection(value) ? value : initialDirection; })()}
           initialHelpArea={resolvedSupport?.area || initialHelpArea}
           initialInitiative={resolvedSupport}
           initialImplementation={resolvedImplementation}

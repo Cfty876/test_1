@@ -53,11 +53,11 @@ export const Topbar: React.FC<TopbarProps> = ({
           type="button"
           onClick={() => { onGoHome(); if (currentView === 'home') { window.dispatchEvent(new Event('pervik:home-top')); window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' }); } }}
           className="flex items-center gap-1.5 text-left focus:outline-none group cursor-pointer"
-          aria-label="Совет Первых Екатеринбурга — на главную"
+          aria-label="Совет Первых местного отделения города Екатеринбург — на главную"
         >
-          <img className="brand-logo" src="/brand/ekb-council-logo.svg" alt="Логотип Совета Первых Екатеринбурга" />
+          <img className="brand-logo" src="/brand/ekb-council-logo.svg" alt="Логотип Совета Первых местного отделения города Екатеринбург" />
           <span className="brand-divider" />
-          <span className="brand-location">Совет Первых<br />Екатеринбург</span>
+          <span className="brand-location">Совет Первых местного отделения города Екатеринбург</span>
         </button>
 
         {/* Right side controls by screen */}

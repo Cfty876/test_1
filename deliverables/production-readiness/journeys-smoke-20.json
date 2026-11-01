@@ -1,0 +1,68 @@
+{
+  "label": "journeys-smoke-20",
+  "synthetic": true,
+  "origin": "http://127.0.0.1:3101",
+  "duration": 5000,
+  "results": [
+    {
+      "name": "public",
+      "concurrency": 20,
+      "requests": 6394,
+      "rps": 1277,
+      "p50": 14,
+      "p95": 26,
+      "p99": 41,
+      "statuses": {
+        "200": 20,
+        "304": 6374
+      },
+      "bytes": 617860,
+      "elapsedMs": 5007
+    },
+    {
+      "name": "status",
+      "concurrency": 20,
+      "requests": 9011,
+      "rps": 1799.5,
+      "p50": 10,
+      "p95": 22,
+      "p99": 35,
+      "statuses": {
+        "200": 20,
+        "304": 8991
+      },
+      "bytes": 4000,
+      "elapsedMs": 5007
+    },
+    {
+      "name": "admin",
+      "concurrency": 20,
+      "requests": 7220,
+      "rps": 1441.8,
+      "p50": 12,
+      "p95": 22,
+      "p99": 31,
+      "statuses": {
+        "200": 20,
+        "304": 7200
+      },
+      "bytes": 2962740,
+      "elapsedMs": 5008
+    },
+    {
+      "name": "ranking",
+      "concurrency": 20,
+      "requests": 7504,
+      "rps": 1498.2,
+      "p50": 12,
+      "p95": 22,
+      "p99": 29,
+      "statuses": {
+        "200": 20,
+        "304": 7484
+      },
+      "bytes": 1377920,
+      "elapsedMs": 5009
+    }
+  ]
+}

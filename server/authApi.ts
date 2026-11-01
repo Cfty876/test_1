@@ -1,3 +1,4 @@
+import { isInitiativeDirection, type InitiativeDirection } from '../src/utils/initiativeDirections.ts';
 import { sendJson, readJsonBody } from './httpSupport.ts';
 import { passwordHash, PasswordBusyError } from './passwords.ts';
 import { guardMaintenance, readMaintenance, sendMaintenance } from './maintenance.ts';
@@ -109,6 +110,7 @@ function sendStorageUnavailable(response: ServerResponse) {
 }
 
 interface StoredInitiative {
+  direction: InitiativeDirection;
   id: string;
   title: string;
   description: string;
@@ -152,12 +154,12 @@ export function createAuthMiddleware(env: AuthEnvironment) {
         const description = typeof body.description === 'string' ? body.description.trim().slice(0, 5000) : '';
         const area = typeof body.area === 'string' ? body.area : '';
         const author = typeof body.author === 'string' ? body.author.trim().slice(0, 120) : '';
-        if (!id || !title || !description || !author || !INITIATIVE_AREAS.has(area)) {
+        if (!id || !title || !description || !author || !INITIATIVE_AREAS.has(area) || !isInitiativeDirection(body.direction)) {
           return sendJson(response, 400, { error: 'Invalid initiative data' });
         }
 
         const initiative: StoredInitiative = {
-          id, title, description, area: area as StoredInitiative['area'], author, publishedAt: new Date().toISOString(),
+          id, title, description, direction: body.direction, area: area as StoredInitiative['area'], author, publishedAt: new Date().toISOString(),
         };
         return sendJson(response, 201, await savePublicInitiative(initiative, env));
       } catch {

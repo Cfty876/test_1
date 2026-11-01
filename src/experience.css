@@ -114,22 +114,7 @@
 /* The cabinet uses the chosen quiet sidebar and expandable, compact rows. */
 .platform-dashboard.cabinet-redesign { background: var(--ideas-ground); }
 .cabinet-layout { display: grid; grid-template-columns: 238px minmax(0,1fr); min-height: calc(100dvh - var(--topbar-height)); max-width: 1680px; margin-inline: auto; }
-.cabinet-sidebar { position: sticky; top: var(--topbar-height); height: calc(100dvh - var(--topbar-height)); display: flex; flex-direction: column; padding: 28px 16px 24px; border-right: 1px solid #e0e3dd; min-width: 0; }
-.cabinet-sidebar-brand { padding: 0 12px 28px; display: grid; gap: 7px; }
-.cabinet-sidebar-brand strong { font-size: 13px; font-weight: 600; }
-.cabinet-sidebar-brand > span { font-size: 11px; color: #848b83; }
-.cabinet-redesign .cabinet-navigation { display: flex; flex-direction: column; gap: 5px; border: 0; margin: 0; overflow-y: auto; }
-.cabinet-redesign .cabinet-navigation > button { width: 100%; flex: 0 0 auto; min-height: 48px; border: 0; padding: 12px 13px; border-radius: 7px; background: transparent; color: #565e56; font-size: 12px; font-weight: 500; justify-content: flex-start; gap: 10px; }
-.cabinet-redesign .cabinet-navigation > button[aria-current] { background: #f1f1f1; color: #222923; font-weight: 700; }
-.cabinet-redesign .cabinet-navigation > button:hover { background: #f0f1ed; color: #252c26; }
-.cabinet-redesign .cabinet-navigation > button > svg:first-child { color: #747f75; }
-.cabinet-redesign .cabinet-navigation b { margin-left: auto; min-width: 20px; background: transparent; font-size: 10px; padding: 1px 3px; color: #778174; }
 .cabinet-nav-arrow { margin-left: auto; }
-.cabinet-navigation b + .cabinet-nav-arrow { margin-left: 0; }
-.cabinet-sidebar-person { display: flex; align-items: center; gap: 10px; margin-top: auto; padding: 28px 10px 0; }
-.cabinet-sidebar-person > div { display: grid; gap: 5px; min-width: 0; }
-.cabinet-sidebar-person strong { font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
-.cabinet-sidebar-person div > span { font-size: 10px; line-height: 1.5; color: #7d857b; }
 .cabinet-content { min-width: 0; }
 .cabinet-redesign .cabinet-container { width: 100%; padding: 32px clamp(24px,3.6vw,58px) 60px; }
 .cabinet-redesign .cabinet-heading { margin-bottom: 32px; align-items: flex-start; }
@@ -196,16 +181,10 @@
   .initiative-support h2 { font-size: 26px; }
   .cabinet-layout { grid-template-columns: 210px minmax(0,1fr); }
   .cabinet-redesign .cabinet-container { padding: 28px 26px 48px; }
-  .cabinet-redesign .cabinet-navigation > button { font-size: 11px; padding-inline: 9px; }
 }
 @media (max-width: 900px) {
   .cabinet-layout { display: block; }
-  .cabinet-sidebar { position: sticky; z-index: 20; top: var(--topbar-height); height: auto; padding: 6px 16px; border-right: 0; border-bottom: 1px solid #e1e4dd; background: var(--ideas-ground); }
-  .cabinet-sidebar-brand, .cabinet-sidebar-person { display: none; }
-  .cabinet-redesign .cabinet-navigation { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; padding: 0; gap: 5px; scrollbar-width: none; }
-  .cabinet-redesign .cabinet-navigation > button { width: auto; min-height: 44px; padding: 10px 12px; font-size: 12px; }
   .cabinet-nav-arrow { display: none; }
-  .cabinet-redesign .cabinet-navigation b { margin-left: 3px; }
   .cabinet-redesign .cabinet-container { padding: 26px 22px 40px; }
   .cabinet-redesign .cabinet-heading h1 { font-size: 29px; }
   .cabinet-redesign .cabinet-overview { grid-template-columns: repeat(3,minmax(0,1fr)); }

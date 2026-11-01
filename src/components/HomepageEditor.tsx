@@ -1,3 +1,4 @@
+import { directionLabel } from '../utils/initiativeDirections.ts';
 import { useEffect, useState } from 'react';
 import { ArrowDown, ArrowUp, Check, Plus, Search, X } from 'lucide-react';
 import type { PublicInitiative } from '../utils/publicInitiatives.ts';
@@ -26,7 +27,7 @@ export function HomepageEditor({ initiatives, selections, onSave, loadError, loa
     if (conflict && !changed) { setBaseline(selections); setDraft(selections.map(item => ({ ...item }))); }
   }, [selections, conflict, changed]);
   const needle = query.trim().toLocaleLowerCase('ru');
-  const visible = initiatives.filter((item) => [item.title, item.author, item.area].some((value) => value.toLocaleLowerCase('ru').includes(needle)));
+  const visible = initiatives.filter((item) => [item.title, item.author, directionLabel(item)].some((value) => value.toLocaleLowerCase('ru').includes(needle)));
   const page = Math.min(requestedPage, Math.max(1, Math.ceil(visible.length / 12)));
 
   function toggle(id: string) {
@@ -82,7 +83,7 @@ export function HomepageEditor({ initiatives, selections, onSave, loadError, loa
       <div className="editor-initiative-list">
         {visible.slice((page - 1) * 12, page * 12).map((initiative) => {
           const selected = draft.some((item) => item.initiativeId === initiative.id);
-          return <div key={initiative.id} className="editor-initiative-row"><div><span>{initiative.area} · {initiative.author}</span><strong>{initiative.title}</strong></div><button type="button" aria-pressed={selected} disabled={!selected && draft.length >= 3} onClick={() => toggle(initiative.id)}>{selected ? <Check size={16} /> : <Plus size={16} />}{selected ? 'Выбрана' : 'Добавить'}</button></div>;
+          return <div key={initiative.id} className="editor-initiative-row"><div><span>{directionLabel(initiative)} · {initiative.author}</span><strong>{initiative.title}</strong></div><button type="button" aria-pressed={selected} disabled={!selected && draft.length >= 3} onClick={() => toggle(initiative.id)}>{selected ? <Check size={16} /> : <Plus size={16} />}{selected ? 'Выбрана' : 'Добавить'}</button></div>;
         })}
         {!visible.length && <p className="editor-empty">{initiatives.length ? 'По этому запросу ничего не найдено.' : 'Пока нет опубликованных инициатив. После одобрения заявки администратором её можно будет выбрать здесь.'}</p>}
       </div>

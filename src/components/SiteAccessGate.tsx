@@ -43,7 +43,7 @@ export function SiteAccessGate({ children }: { children: ReactNode }) {
   </>;
   return <div className="platform-shell maintenance-shell">
     <FormFeedback />
-    <header className="maintenance-brand"><img src="/brand/ekb-council-logo.svg" alt="Совет Первых Екатеринбурга" /><span>Первик · Екатеринбург</span></header>
+    <header className="maintenance-brand"><img src="/brand/ekb-council-logo.svg" alt="Совет Первых местного отделения города Екатеринбург" /><span>Первик · Екатеринбург</span></header>
     <main className="maintenance-page" aria-labelledby="maintenance-title">
       <div className="maintenance-mark" aria-hidden="true"><Wrench size={48} strokeWidth={1.5} /></div>
       <span className="maintenance-caption">{status ? 'Небольшая пауза для важного' : 'Подключаемся к платформе'}</span>
@@ -53,7 +53,7 @@ export function SiteAccessGate({ children }: { children: ReactNode }) {
       <button className="maintenance-retry" type="button" onClick={() => { setError(''); void refresh().catch(() => setError('Сервер пока недоступен. Повторим подключение автоматически.')); }}><RefreshCw size={17} />Проверить доступ</button>
       {status && error && <p className="maintenance-small" role="alert">{error}</p>}
     </main>
-    <footer className="maintenance-footer"><span>Совет Первых · Екатеринбург</span><button type="button" onClick={() => setLoginOpen(true)}>Вход администратора<ArrowRight size={16} /></button></footer>
+    <footer className="maintenance-footer"><span>Совет Первых местного отделения города Екатеринбург</span><button type="button" onClick={() => setLoginOpen(true)}>Вход администратора<ArrowRight size={16} /></button></footer>
     <LoginModal isOpen={loginOpen} onClose={() => setLoginOpen(false)} onSuccess={session => { if (session.role === 'admin') { setLoginOpen(false); void refresh().catch(() => setError('Не удалось обновить доступ. Попробуй ещё раз.')); } }} showToast={setError} />
   </div>;
 }

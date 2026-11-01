@@ -1,3 +1,4 @@
+import type { InitiativeDirection } from './initiativeDirections.ts';
 export type ApplicationStatus = 'pending' | 'needs_changes' | 'accepted' | 'rejected' | 'withdrawn';
 
 export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
@@ -16,6 +17,7 @@ export interface ApplicationEvent {
 
 export interface ApplicationReceipt { id: string; code: string }
 export interface TrackedApplication {
+  direction?: InitiativeDirection;
   id: string;
   status: ApplicationStatus;
   category: string;
@@ -47,7 +49,7 @@ export function forgetReceipt(): void {
   try { sessionStorage.removeItem(RECEIPT_KEY); } catch { /* Storage may be unavailable. */ }
 }
 export function downloadReceipt(receipt: ApplicationReceipt): void {
-  const file = new Blob([`Первик — Совет Первых Екатеринбурга\nНомер заявки: ${receipt.id}\nЛичный код: ${receipt.code}\n\nПроверка статуса: ${window.location.origin}/?view=track\nВведите личный код на странице проверки. Не публикуйте его: он открывает статус, текст заявки и возможность доработки или отзыва.\n`], { type: 'text/plain;charset=utf-8' });
+  const file = new Blob([`Первик — Совет Первых местного отделения города Екатеринбург\nНомер заявки: ${receipt.id}\nЛичный код: ${receipt.code}\n\nПроверка статуса: ${window.location.origin}/?view=track\nВведите личный код на странице проверки. Не публикуйте его: он открывает статус, текст заявки и возможность доработки или отзыва.\n`], { type: 'text/plain;charset=utf-8' });
   const url = URL.createObjectURL(file);
   const link = document.createElement('a');
   link.href = url; link.download = 'pervik-zayavka.txt'; link.click();

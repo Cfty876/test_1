@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
-import { Download, Share, Smartphone, WifiOff, X } from 'lucide-react';
+import { Share, Smartphone, WifiOff, X } from 'lucide-react';
 import { ModalDialog } from './ModalDialog.tsx';
 
 interface InstallPrompt extends Event {
@@ -51,13 +51,6 @@ export function MobileAppProvider({ children }: { children: ReactNode }) {
       <button type="button" className="home-primary" onClick={() => setGuide(false)}>Понятно</button>
     </section></ModalDialog>}
   </InstallContext.Provider>;
-}
-
-export function InstallAppCard() {
-  const { installed, openInstall } = useContext(InstallContext);
-  const [dismissed, setDismissed] = useState(() => { try { return Date.now() - Number(localStorage.getItem('pervik.install-dismissed.v1')) < 7 * 86400000; } catch { return false; } });
-  if (installed || dismissed) return null;
-  return <aside className="install-app-card" aria-label="Установка Первика"><img src="/app/icon-192.png" alt="" width="48" height="48" /><div><strong>Первик всегда рядом</strong><span>Добавь на главный экран</span></div><button type="button" className="install-card-action" onClick={openInstall} aria-label="Добавить Первик на главный экран"><Download size={20} /></button><button type="button" className="install-dismiss" aria-label="Скрыть предложение установки на неделю" onClick={() => { setDismissed(true); try { localStorage.setItem('pervik.install-dismissed.v1', String(Date.now())); } catch { /* Storage can be unavailable in private mode. */ } }}><X size={16} /></button></aside>;
 }
 
 export function InstallAppMenuButton() {

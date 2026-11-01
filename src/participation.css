@@ -1,10 +1,4 @@
 /* Shared by the two public submission journeys. */
-.participation-paths{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:32px}
-.participation-path{display:flex;flex-direction:column;align-items:flex-start;padding:28px;background:#f3f3f0;border-radius:16px;color:#202024;min-width:0}
-.participation-path:first-child{background:#fff0f2}
-.participation-path h3{font-size:clamp(24px,2.6vw,36px);line-height:1.15;font-weight:750;letter-spacing:-.035em;margin:0 0 12px}
-.participation-path p{font-size:16px;line-height:1.65;margin:0 0 16px;max-width:48ch}
-.participation-path a{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:48px;width:100%;margin-top:auto;color:#bc0024;font-size:16px;font-weight:750;text-decoration:none}
 .submission-switch{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;background:#f1f1ee;border-radius:12px;margin-bottom:24px}
 .submission-switch a{display:flex;align-items:center;justify-content:center;min-height:48px;padding:8px;text-align:center;font-size:14px;font-weight:700;text-decoration:none;color:#45454c;border-radius:8px}
 .submission-switch a[aria-current=page]{background:white;color:#c70027;box-shadow:0 1px 4px #20202412}
@@ -12,8 +6,7 @@
 .platform-form-card [role=checkbox]{min-height:84px}
 .platform-home .home-actions a{min-height:52px;text-decoration:none}
 .platform-home .areas-heading-row p{font-size:16px;line-height:1.6;max-width:48ch;margin-top:16px}
-.participation-path a:hover{text-decoration:underline;text-underline-offset:5px}
-.participation-path a:focus-visible,.submission-switch a:focus-visible{outline:3px solid #df002b;outline-offset:4px}
-@media(max-width:700px){.participation-paths{grid-template-columns:1fr;gap:16px;margin-top:24px}.participation-path{padding:24px}.participation-path h3{font-size:28px}.participation-path ol{margin-bottom:24px}.platform-home .home-actions{display:flex;flex-direction:column;align-items:stretch}.platform-home .home-actions a{width:100%;justify-content:center;font-size:15px}.platform-form-card{max-width:600px}.submission-switch a{font-size:13px}.platform-home .areas-heading-row p{font-size:14px}}
+.submission-switch a:focus-visible{outline:3px solid #df002b;outline-offset:4px}
+@media(max-width:700px){.platform-home .home-actions{display:flex;flex-direction:column;align-items:stretch}.platform-home .home-actions a{width:100%;justify-content:center;font-size:15px}.platform-form-card{max-width:600px}.submission-switch a{font-size:13px}.platform-home .areas-heading-row p{font-size:14px}}
 
 .platform-home .home-actions .home-login{display:inline-flex!important;align-items:center;justify-content:center;border:1px solid #df002b;color:#bd0024;background:#fff;gap:12px}

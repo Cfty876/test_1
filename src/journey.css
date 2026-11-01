@@ -1,0 +1,44 @@
+/* A four-step explanation, matching the supplied reference without a JS animation. */
+.idea-process .home-section-heading{margin-bottom:28px}
+.idea-process .process-eyebrow{font:400 12px/1.5 var(--font-text);color:#62636d;margin:0 0 12px}
+.idea-process-steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:28px;list-style:none;padding:0;margin:0 0 24px}
+.idea-process-steps li{min-width:0}
+.idea-process-index{position:relative;display:flex;align-items:center;justify-content:space-between;color:var(--red,#df002b);border-bottom:1px solid #f3c2cc;padding:0 8px 16px 0;margin-bottom:22px}
+.idea-process-index:after{position:absolute;content:"";bottom:-4px;left:0;width:7px;height:7px;border-radius:50%;background:currentColor}
+.idea-process-index>span{font:700 30px/1.2 var(--font-display)}
+.idea-process h3{font:700 16px/1.5 var(--font-display);margin:0 0 10px}
+.idea-process-steps p{font:400 15px/1.65 var(--font-text);margin:0;color:#62636d}
+.idea-process-start{display:inline-flex;align-items:center;gap:20px;min-height:48px;border-bottom:1px solid currentColor;color:#c90029;font-size:15px;text-decoration:none}
+.platform-shell .area-grid .area-card{min-width:0;background:#fff;border-color:#e5e5e2}
+.initiative-direction-field{padding:0;border:0;min-width:0}
+.initiative-direction-field legend{font:700 16px/1.5 var(--font-display);margin-bottom:8px}
+.initiative-direction-field>p{font-size:14px;margin:0 0 12px;color:#62636d}
+.initiative-direction-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.initiative-direction-options label{padding:16px;border:1px solid #d9d9dc;border-radius:12px;cursor:pointer;min-width:0;background:#fff}
+.initiative-direction-options label.is-selected{border-color:#c90029;background:#fff7f9}
+.initiative-direction-options label:focus-within{outline:3px solid #c90029;outline-offset:3px}
+.initiative-direction-options label>span{display:flex;align-items:center;gap:10px;min-height:28px}
+.initiative-direction-options input{width:18px;height:18px;accent-color:#c90029;flex-shrink:0}
+.initiative-direction-options strong{font:700 15px/1.45 var(--font-display);overflow-wrap:anywhere}
+.initiative-direction-options small{display:block;font-size:13px;line-height:1.5;margin-top:10px;color:#62636d}
+.initiative-direction-options p{font-size:14px;line-height:1.5;margin:8px 0 0;color:#41424a}
+.initiative-settings-direction{display:grid;gap:8px;margin:18px 0;font-size:15px}
+/* One staff shell for administrators and curators. School identity stays separate. */
+.platform-shell .staff-workspace .council-sidebar{background:#f7f7f4;border-right:0}
+.platform-shell .staff-workspace .cabinet-content{margin:8px 8px 8px 0;padding:24px;border:1px solid #e7e7e3;border-radius:16px;background:#fff;min-width:0}
+.platform-shell .staff-workspace .cabinet-container{max-width:none;padding:0;margin:0}
+.platform-shell .staff-workspace .cabinet-heading h1{font-size:28px}
+.staff-workspace .admin-home{grid-template-columns:minmax(0,1.8fr) minmax(240px,1fr);gap:24px}
+.staff-workspace .admin-home-side{min-width:0}
+.staff-workspace .admin-home-side>section{box-shadow:none}
+.staff-workspace .cabinet-location{line-height:1.6}
+.council-wordmark>span,.council-sidebar-footer>span{overflow-wrap:anywhere}
+.ideas-eyebrow{display:block;max-width:65ch;line-height:1.6;letter-spacing:0;text-transform:none}
+@media(max-width:1100px){.staff-workspace .admin-home{grid-template-columns:minmax(0,1fr)}.staff-workspace .admin-home-side{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.staff-workspace .admin-home-side .admin-quick-links{grid-column:1/-1}}
+@media(max-width:900px){.platform-shell .staff-workspace .cabinet-content{margin:0;border:0;border-radius:0;padding:20px 16px calc(100px + env(safe-area-inset-bottom))}.platform-shell .staff-workspace .cabinet-container{padding:0}.idea-process-steps{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 20px}}
+@media(max-width:540px){.idea-process-steps{grid-template-columns:minmax(0,1fr);gap:24px}.idea-process-index{margin-bottom:14px;padding-bottom:12px}.idea-process-index>span{font-size:27px}.idea-process-steps p{max-width:44ch}.initiative-direction-options{gap:10px}.initiative-direction-options label{padding:12px}.initiative-direction-options strong{font-size:13px}.initiative-direction-options p{display:none}.staff-workspace .admin-home-side{grid-template-columns:minmax(0,1fr)}.platform-shell .staff-workspace .cabinet-heading h1{font-size:24px}.footer-brandline{align-items:flex-start}.footer-brandline strong{line-height:1.5}}
+@media(prefers-reduced-motion:reduce){.idea-process-start{transition:none}}
+
+.staff-workspace .admin-home-main,.staff-workspace .admin-home-side{grid-column:auto}
+.brand-location{max-width:310px;white-space:normal;line-height:1.4;font-size:12px}
+@media(max-width:1100px){.brand-location{display:none}}

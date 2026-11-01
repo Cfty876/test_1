@@ -1,3 +1,4 @@
+import type { InitiativeDirection } from '../src/utils/initiativeDirections.ts';
 import type { MemberProfile } from '../src/utils/profile.ts';
 import type { MaintenanceSettings } from '../src/utils/siteStatus.ts';
 import { assertMaintenanceWriteAllowed } from './maintenanceContext.ts';
@@ -37,7 +38,7 @@ export interface PlatformState {
   implementations: Implementation[];
   implementationPhotos: ImplementationPhoto[];
   notifications: PlatformNotification[];
-  initiativeCovers: { initiativeId: string; coverId: string; version: number }[];
+  initiativeCovers: { initiativeId: string; coverId: string; version: number; direction?: InitiativeDirection }[];
   meritClaims: MeritClaim[];
   meritLedger: MeritEntry[];
   councilEvents: CouncilEvent[];

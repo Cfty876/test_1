@@ -1,3 +1,4 @@
+import type { InitiativeDirection } from './initiativeDirections.ts';
 import type { HelpArea } from '../components/ApplicationFormView.tsx';
 import { fetchApi } from './http.ts';
 import type { PublicImplementation } from './implementations.ts';
@@ -7,6 +8,7 @@ export interface PublicInitiative {
   title: string;
   description: string;
   area: HelpArea;
+  direction?: InitiativeDirection;
   author: string;
   publishedAt: string;
   coverId?: string;

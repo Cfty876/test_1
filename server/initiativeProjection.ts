@@ -42,13 +42,14 @@ export async function readPublishedInitiatives(env: Record<string, string | unde
     const previous = legacyById.get(application.id);
     return {
       id: application.id, title: firstLine.length > 64 ? `${firstLine.slice(0, 61).trimEnd()}…` : firstLine,
-      description: application.description, author: application.name,
+      description: application.description, author: application.name, direction: application.direction,
       area: ['Медиа', 'IT', 'Волонтёрство'].includes(application.area || '') ? application.area as PublicInitiative['area'] : 'Мероприятия',
       publishedAt: application.history?.find((event) => event.status === 'accepted')?.at || previous?.publishedAt || application.updatedAt || application.createdAt || '',
     };
   });
   const result = [...projected, ...legacy.filter((initiative) => !applicationIds.has(initiative.id))].map((initiative) => ({
     ...initiative,
+    direction: coverById.get(initiative.id)?.direction || initiative.direction,
     coverId: coverById.get(initiative.id)?.coverId,
     coverVersion: coverById.get(initiative.id)?.version || 0,
     likeCount: likeCounts.get(initiative.id) || 0,

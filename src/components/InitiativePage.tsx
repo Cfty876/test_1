@@ -1,3 +1,4 @@
+import { directionLabel } from '../utils/initiativeDirections.ts';
 import { NotFoundView } from './NotFoundView.tsx';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ArrowUpRight, CalendarDays, Heart, Link, Users } from 'lucide-react';
@@ -42,7 +43,7 @@ export function InitiativePage({ initiative, loading, loadError, onRetry, liked,
     <button type="button" className="ideas-back" onClick={onBack}><ArrowLeft size={17} /> Все инициативы</button>
     {loadError && <p className="inline-error" role="alert">Не удалось обновить данные инициативы. <button type="button" onClick={onRetry}>Попробовать снова</button></p>}
     <div className="initiative-page-layout"><article className="initiative-story">
-      <div className="initiative-page-tags"><span className="idea-category">{initiative.area}</span><span>{initiativeStage(initiative)}</span></div>
+      <div className="initiative-page-tags"><span className="idea-category">{directionLabel(initiative)}</span><span>{initiativeStage(initiative)}</span></div>
       <h1 ref={headingRef} tabIndex={-1}>{initiative.title}</h1>
       <div className="initiative-published"><span className="idea-avatar" aria-hidden="true">{authorInitials(initiative.author)}</span><span>{initiative.author}</span>{Number.isFinite(published.getTime()) && <time dateTime={initiative.publishedAt}><CalendarDays size={15} />{published.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })}</time>}</div>
       <button type="button" className="home-primary initiative-mobile-action" onClick={join}>{available.length > 1 ? 'Выбрать площадку' : 'Хочу помочь'}<ArrowUpRight size={18} /></button>

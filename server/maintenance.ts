@@ -12,7 +12,7 @@ export function sendMaintenance(response: ServerResponse, maintenance: Maintenan
   response.setHeader('Retry-After', '60');
   response.end(JSON.stringify({ code: 'MAINTENANCE_MODE', error: 'На платформе идут технические работы.', maintenance }));
 }
-export async function guardMaintenance(request: IncomingMessage, response: ServerResponse, env: Record<string, string | undefined>, administrator: boolean): Promise<boolean> {
+export async function guardMaintenance(_request: IncomingMessage, response: ServerResponse, env: Record<string, string | undefined>, administrator: boolean): Promise<boolean> {
   if (administrator) return false;
   const maintenance = await readMaintenance(env);
   if (!maintenance.enabled) return false;

@@ -1,5 +1,5 @@
 /* Dedicated phone interface and installable app shell. */
-.mobile-copy, .mobile-step-details, .mobile-bottom-nav, .install-app-card { display: none; }
+.mobile-copy, .mobile-step-details, .mobile-bottom-nav { display: none; }
 .install-menu-button { display: flex; align-items: center; gap: 10px; width: fit-content; min-height: 44px; margin-top: 24px; padding: 10px 14px; border: 1px solid #e7d6db; border-radius: 10px; color: #c9001f; background: #fff; font-size: 13px; cursor: pointer; }
 .mobile-network-status { position: relative; top: auto; z-index: 0; display: flex; justify-content: center; align-items: center; gap: 8px; padding: 9px 16px; background: #fff3dc; color: #684708; font-size: 12px; line-height: 1.5; }
 .install-sheet { position: relative; width: min(100%,440px); padding: 28px; border-radius: 20px; background: #fff; color: #171717; overflow-y: auto; max-height: calc(100dvh - 40px); }
@@ -45,13 +45,6 @@
   .home-actions .home-login { display: none; }
   .home-art { background-image: linear-gradient(180deg,#fff 0%,#fff 34%,#fffffff5 45%,#ffffff88 62%,#ffffff00 80%), url('/brand/hero-photo.webp'); background-position: center,62% 70%; background-size: cover; }
   .home-art::before, .home-art::after { display: none; }
-  .install-app-card { position: relative; display: flex; align-items: center; gap: 12px; margin: 20px 0 0; padding: 12px 10px 12px 12px; border: 1px solid #eee; border-radius: 16px; background: #fff; }
-  .install-app-card > img { flex: 0 0 44px; width: 44px; height: 44px; border: 1px solid #f2f2f2; border-radius: 12px; }
-  .install-app-card > div { flex: 1; min-width: 0; display: grid; gap: 3px; }
-  .install-app-card strong { font-size: 13px; font-weight: 700; }
-  .install-app-card span { font-size: 11px; color: #777; }
-  .install-card-action { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: #fff0f3; color: #e60023; flex-shrink: 0; }
-  .install-dismiss { position: absolute; right: -7px; top: -10px; display: grid; place-items: center; width: 32px; height: 32px; background: #fff; border: 1px solid #eee; border-radius: 50%; color: #888; }
   .how-section, .help-section, .areas-section, .home-faq { padding: 32px 0; }
   .home-section-heading, .areas-heading-row { margin-bottom: 20px; }
   .home-section-heading h2, .areas-heading-row h2, .home-faq h2 { font-size: 26px; line-height: 1.15; }
@@ -169,9 +162,6 @@
   .cabinet-permissions summary, .cabinet-notifications summary { min-height: 44px; font-size: 12px; }
   .cabinet-permissions summary > span { display: none; }
   .cabinet-notifications { margin-bottom: 18px; }
-  .cabinet-navigation { display: flex; flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; padding: 4px 0 12px; gap: 7px; margin-bottom: 16px; scrollbar-width: none; }
-  .cabinet-navigation > button { flex: 0 0 auto; width: auto; min-height: 44px; padding: 10px 12px; border-radius: 12px; font-size: 12px; gap: 6px; }
-  .cabinet-navigation > button b { font-size: 10px; }
   .cabinet-section-heading h2 { font-size: 21px; }
   .cabinet-section-heading p { font-size: 12px; }
   .cabinet-toolbar { gap: 8px; }
@@ -287,13 +277,12 @@
   .home-hero { padding-top: clamp(24px,4.5svh,42px); }
   .mobile-bottom-nav > button { font-size: 10px; font-weight: 600; }
   .mobile-bottom-nav > button[aria-current] > span:first-child { background: #ffebef; }
-  .mobile-bottom-nav > button:focus-visible, .install-card-action:focus-visible { outline: 2px solid #c9001f; outline-offset: -2px; border-radius: 12px; }
+  .mobile-bottom-nav > button:focus-visible { outline: 2px solid #c9001f; outline-offset: -2px; border-radius: 12px; }
   .area-card { min-height: 112px; border-color: #e8e8ed; }
   .area-number { color: #a85864; }
   .area-arrow { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: #fff1f4; right: 11px; top: 11px; }
   .area-title { line-height: 1.25; }
   .home-footer { background: #f8f8fa; }
-  .cabinet-navigation { scroll-padding-inline: 8px; position: relative; }
   .cabinet-panels { min-height: max(320px,calc(100svh - 370px)); }
   .cabinet-record { background: #fff; }
   .cabinet-select select { font-size: 14px; min-height: 32px; }

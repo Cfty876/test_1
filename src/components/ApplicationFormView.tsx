@@ -1,3 +1,5 @@
+import type { InitiativeDirection } from '../utils/initiativeDirections.ts';
+import { INITIATIVE_DIRECTIONS, isInitiativeDirection } from '../utils/initiativeDirections.ts';
 import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeftIcon, LightbulbIcon } from './Icons.tsx';
 import type { PublicInitiative } from '../utils/publicInitiatives.ts';
@@ -9,9 +11,11 @@ import { PRIVACY_VERSION, PRIVACY_ACKNOWLEDGEMENT_ERROR } from '../utils/legal.t
 import { PhoneInput } from './PhoneInput.tsx';
 import { formatRussianPhone, normalizeVkUrl } from '../utils/contactFields.ts';
 
-export type HelpArea = 'Мероприятия' | 'Медиа' | 'IT' | 'Волонтёрство';
+import type { HelpArea } from '../utils/auth.ts';
+export type { HelpArea } from '../utils/auth.ts';
 
 export interface ApplicationFormData {
+  direction?: InitiativeDirection;
   name: string;
   category: string;
   customCategoryText?: string;
@@ -33,6 +37,7 @@ export interface ApplicationFormData {
 
 interface ApplicationFormViewProps {
   mode?: 'initiative' | 'activist';
+  initialDirection?: InitiativeDirection;
   onGoHome: () => void;
   backLabel?: string;
   onSubmitSuccess: (data: ApplicationFormData) => Promise<void>;
@@ -63,6 +68,7 @@ function readDraft(context: string): FormDraft | null {
 export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
   onGoHome,
   mode = 'initiative',
+  initialDirection = 'education',
   backLabel = 'На главную',
   onSubmitSuccess,
   initialHelpArea,
@@ -73,6 +79,7 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
   const [savedDraft] = useState(() => readDraft(context));
   const defaultData: ApplicationFormData = {
     name: '',
+    direction: initialDirection,
     category: initialInitiative ? 'Хочу помочь инициативе' : mode === 'initiative' ? 'Есть своя инициатива' : 'Хочу быть активистом',
     customCategoryText: '',
     helpArea: initialHelpArea,
@@ -84,7 +91,7 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
     isInitiative: !initialInitiative && mode === 'initiative',
     participationRole: initialImplementation && initialImplementation.volunteerSlots > initialImplementation.volunteersAccepted ? 'volunteer' : 'activist',
   };
-  const [formData, setFormData] = useState<ApplicationFormData>(() => savedDraft ? { ...savedDraft.data, phone: savedDraft.data.phone ? formatRussianPhone(savedDraft.data.phone) : '' } : defaultData);
+  const [formData, setFormData] = useState<ApplicationFormData>(() => savedDraft ? { ...savedDraft.data, direction: isInitiativeDirection(new URLSearchParams(location.search).get('direction')) ? initialDirection : isInitiativeDirection(savedDraft.data.direction) ? savedDraft.data.direction : initialDirection, phone: savedDraft.data.phone ? formatRussianPhone(savedDraft.data.phone) : '' } : defaultData);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [privacyAcknowledged, setPrivacyAcknowledged] = useState(false);
@@ -104,7 +111,7 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
 
   const isCustomOption = formData.category === 'Свой вариант (указать область)';
   const isInitiativeOption = formData.category === 'Есть своя инициатива';
-  const showAreaSelector = !isSupport;
+  const showAreaSelector = !isSupport && !isInitiativeOption;
   const isActivist = !isInitiativeOption && !isSupport;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -135,7 +142,7 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
     setSubmitError('');
     setIsSubmitting(true);
     try {
-      const payload = { ...formData, helpAreas: isActivist ? (formData.helpAreas?.length ? formData.helpAreas : [formData.helpArea!]) : [formData.helpArea!], customCategoryText: isCustomOption ? formData.customCategoryText : undefined, participationRole: isSupport && initialImplementation ? formData.participationRole : undefined, ...(isSupport ? { supportInitiativeId: initialInitiative!.id, ...(initialImplementation ? { supportImplementationId: initialImplementation.id } : {}) } : {}) };
+      const payload = { ...formData, direction: isInitiativeOption ? formData.direction : undefined, helpAreas: isActivist ? (formData.helpAreas?.length ? formData.helpAreas : [formData.helpArea!]) : [formData.helpArea!], customCategoryText: isCustomOption ? formData.customCategoryText : undefined, participationRole: isSupport && initialImplementation ? formData.participationRole : undefined, ...(isSupport ? { supportInitiativeId: initialInitiative!.id, ...(initialImplementation ? { supportImplementationId: initialImplementation.id } : {}) } : {}) };
       const fingerprint = JSON.stringify(payload);
       if (submission.current.fingerprint !== fingerprint) submission.current = { fingerprint, id: crypto.randomUUID(), code: createTrackingCode() };
       try { sessionStorage.setItem(`${DRAFT_KEY}:${context}`, JSON.stringify({ context, data: formData, submission: submission.current })); } catch { /* In-memory retry remains available. */ }
@@ -227,33 +234,25 @@ export const ApplicationFormView: React.FC<ApplicationFormViewProps> = ({
             </div>
           )}
 
-          {/* Обязательный выбор из 4 областей (Мероприятия, Медиа, IT, Волонтёрство) */}
+          {/* Темы проектов отделены от навыков активистов. */}
+          {isInitiativeOption && <fieldset className="initiative-direction-field"><legend>Направление инициативы <span aria-hidden="true">*</span></legend><p>Выбери одну тему проекта.</p><div className="initiative-direction-options">{INITIATIVE_DIRECTIONS.map(direction => <label key={direction.id} className={formData.direction === direction.id ? 'is-selected' : ''}><span><input type="radio" required name="initiative-direction" value={direction.id} checked={formData.direction === direction.id} onChange={() => setFormData(data => ({ ...data, direction: direction.id }))} /><strong>{direction.label}</strong></span><small>{direction.description}</small><p>{direction.hint}</p></label>)}</div></fieldset>}
           {showAreaSelector && (
             <div className="p-3.5 bg-[#F7F8FA] rounded-[12px] border border-[#E8EAEE] space-y-2.5">
               <span id="help-area-label" className="block text-[12px] font-semibold text-[#0F1115]">
-                {isActivist ? 'В каких направлениях готов помогать?' : 'Направление инициативы'} <span className="text-[#E60023]">*</span>
+                В каких направлениях готов помогать? <span className="text-[#E60023]">*</span>
               </span>
               {isActivist && <p className="journey-hint">Выбери хотя бы одно направление. Можно несколько; опыт не обязателен.</p>}
-              <div className="grid grid-cols-2 gap-2" role={isActivist ? 'group' : 'radiogroup'} aria-labelledby="help-area-label">
-                {HELP_AREAS.map((area, index) => {
-                  const isSelected = isActivist ? formData.helpAreas?.includes(area.id) : formData.helpArea === area.id;
+              <div className="grid grid-cols-2 gap-2" role="group" aria-labelledby="help-area-label">
+                {HELP_AREAS.map((area) => {
+                  const isSelected = formData.helpAreas?.includes(area.id);
                   return (
                     <button
                       key={area.id}
                       type="button"
-                      role={isActivist ? 'checkbox' : 'radio'}
+                      role="checkbox"
                       aria-checked={isSelected}
-                      tabIndex={isActivist || isSelected ? 0 : -1}
-                      onKeyDown={(event) => {
-                        if (isActivist) return;
-                        if (!['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
-                        event.preventDefault();
-                        const next = event.key === 'Home' ? 0 : event.key === 'End' ? HELP_AREAS.length - 1 : (index + (event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : -1) + HELP_AREAS.length) % HELP_AREAS.length;
-                        setFormData((data) => ({ ...data, helpArea: HELP_AREAS[next].id }));
-                        event.currentTarget.parentElement?.querySelectorAll<HTMLButtonElement>('[role=radio]')[next]?.focus();
-                      }}
+                      tabIndex={0}
                       onClick={() => setFormData(data => {
-                        if (!isActivist) return { ...data, helpArea: area.id };
                         const current = data.helpAreas || [data.helpArea!];
                         const next = current.includes(area.id) ? current.filter(value => value !== area.id) : [...current, area.id];
                         return next.length ? { ...data, helpAreas: next, helpArea: next[0] } : data;

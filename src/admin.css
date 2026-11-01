@@ -24,7 +24,7 @@
 .cabinet-redesign .cabinet-decision-actions button{min-height:44px;padding:10px 14px;white-space:normal;line-height:1.35}
 @media(max-width:640px){.admin-queue-heading{align-items:flex-start;flex-direction:column;gap:6px;padding:16px}.admin-task{padding:14px 16px;gap:12px}.admin-task>svg:first-child{display:none}.admin-task small{font-size:13px}.platform-shell .admin-queue-heading h2{font-size:17px}.cabinet-redesign .cabinet-decision-actions{width:100%}.cabinet-redesign .cabinet-decision-actions button{flex:1 1 auto}.cabinet-redesign .cabinet-heading{align-items:flex-start}.cabinet-redesign .cabinet-heading>button span{display:none}.cabinet-redesign .cabinet-heading>button{min-width:44px;min-height:44px;justify-content:center}}
 
-@media(min-width:1100px){.admin-task-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.admin-task{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start;padding:18px 20px;min-height:112px;border-left:1px solid #eeefec}.admin-task:first-child{border-left:0}.admin-task>svg{display:none}.admin-task strong{font-size:15px}.admin-task small{font-size:13px;line-height:1.4}.admin-task>b{font-size:21px}.cabinet-redesign .cabinet-navigation>button{font-size:14px;line-height:1.4}}
+@media(min-width:1100px){.admin-task-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.admin-task{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:start;padding:18px 20px;min-height:112px;border-left:1px solid #eeefec}.admin-task:first-child{border-left:0}.admin-task>svg{display:none}.admin-task strong{font-size:15px}.admin-task small{font-size:13px;line-height:1.4}.admin-task>b{font-size:21px}}
 
 .is-admin .cabinet-container{display:flex;flex-direction:column}
 .is-admin .cabinet-messages{order:2;margin-top:24px}
@@ -71,19 +71,6 @@
 .cabinet-redesign :is(button,input,textarea,select,label,summary,table),.cabinet-dialog { font-family: var(--font-text); font-synthesis: none; }
 .cabinet-redesign :is(h1,h2,h3,h4),.cabinet-dialog :is(h1,h2,h3,h4) { font-family: var(--font-display); font-weight: 700; }
 .cabinet-redesign .cabinet-layout { grid-template-columns: 244px minmax(0,1fr); max-width: 1600px; margin-inline: auto; }
-.cabinet-redesign .cabinet-sidebar { padding: 28px 16px 20px; background: var(--cabinet-ground); border-color: var(--cabinet-line); }
-.cabinet-redesign .cabinet-sidebar-brand { padding: 0 12px 24px; }
-.cabinet-redesign .cabinet-sidebar-brand strong { font-family: var(--font-display); font-size: 22px; }
-.cabinet-redesign .cabinet-sidebar-brand > span { color: var(--cabinet-muted); font-size: 13px; line-height: 1.5; }
-.cabinet-redesign .cabinet-navigation > button { min-height: 48px; padding: 12px; font-size: 15px; color: #50545a; border-radius: 8px; }
-.cabinet-redesign .cabinet-navigation > button[aria-current] { color: var(--cabinet-ink); background: #eaeae5; }
-.cabinet-redesign .cabinet-navigation b { color: #62656a; font-size: 13px; min-width: 22px; }
-.cabinet-redesign .cabinet-navigation > button > svg { flex-shrink: 0; }
-.cabinet-help-button { display: flex; align-items: center; gap: 10px; text-align: left; min-height: 48px; padding: 12px; margin-top: 24px; color: #50545a; cursor: pointer; border-radius: 8px; font-size: 14px; }
-.cabinet-help-button:hover { background: #eeeeea; }
-.cabinet-redesign .cabinet-sidebar-person { padding: 20px 10px 0; border-top: 1px solid var(--cabinet-line); margin-top: auto; }
-.cabinet-redesign .cabinet-sidebar-person strong { font-size: 14px; line-height: 1.5; }
-.cabinet-redesign .cabinet-sidebar-person div > span { font-size: 12px; color: var(--cabinet-muted); }
 .cabinet-redesign .cabinet-container { max-width: 1160px; margin-inline: auto; padding: 28px clamp(20px,3vw,44px) 60px; }
 .cabinet-redesign .cabinet-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; margin: 0 0 24px; }
 .cabinet-location { color: var(--cabinet-muted); font-size: 13px; }
@@ -157,7 +144,6 @@
 .cabinet-guide > details p { margin: 4px 0 12px; }
 .cabinet-guide ol { padding-left: 22px; margin-bottom: 16px; }
 .cabinet-guide li + li { margin-top: 10px; }
-.cabinet-mobile-section { display: none; }
 .cabinet-access-form :is(input,select,button) { font-family: var(--font-text); min-height: 44px; font-size: 16px; }
 .cabinet-access-form .home-primary,.cabinet-dialog .home-primary { font-family: var(--font-display); font-size: 13px; }
 .cabinet-redesign :is(button,a,input,textarea,select,summary):focus-visible,.cabinet-dialog :is(button,a,input,textarea,select,summary):focus-visible { outline: 3px solid var(--color-accent,#df002b); outline-offset: 3px; }
@@ -165,13 +151,6 @@
 @media(max-width:1150px) and (min-width:901px) { .admin-home-main { grid-column: span 12; }.admin-home-side { grid-column: span 12; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); }.admin-quick-links { border-bottom: 0; }.admin-start-guide { padding: 16px; } }
 @media(max-width:900px) {
  .cabinet-redesign .cabinet-layout { grid-template-columns: minmax(0,1fr); }
- .cabinet-redesign .cabinet-sidebar { height: auto; padding: 12px 20px; display: flex; flex-direction: row; gap: 12px; align-items: center; flex-wrap: wrap; border-bottom: 1px solid var(--cabinet-line); border-right: 0; }
- .cabinet-redesign .cabinet-navigation { display: none; }
- .cabinet-redesign .cabinet-sidebar-brand,.cabinet-redesign .cabinet-sidebar-person { display: none; }
- .cabinet-mobile-section { display: grid; gap: 3px; flex: 1; min-width: 160px; font-size: 12px; color: var(--cabinet-muted); }
- .cabinet-mobile-section select { width: 100%; min-height: 44px; border: 1px solid var(--cabinet-line); border-radius: 8px; padding: 8px 12px; background: #fff; color: var(--cabinet-ink); font-size: 16px; }
- .cabinet-help-button { margin: 0; padding: 8px; font-size: 0; width: 44px; height: 44px; justify-content: center; flex-shrink: 0; }
- .cabinet-help-button svg { width: 22px; height: 22px; }
  .cabinet-redesign .cabinet-container { padding: 24px 20px 40px; }
  .cabinet-redesign .cabinet-heading { gap: 14px; }
  .cabinet-redesign .cabinet-heading p { font-size: 15px; }
@@ -184,7 +163,6 @@
  .cabinet-redesign .cabinet-heading > button { min-width: 44px; justify-content: center; padding: 10px; }
 }
 @media(max-width:480px) {
- .cabinet-redesign .cabinet-sidebar { padding: 10px 16px; }
  .cabinet-redesign .cabinet-container { padding: 20px 16px 40px; }
  .admin-home-side { display: flex; }
  .admin-home .admin-task { grid-template-columns: minmax(0,1fr) 22px 16px; }
@@ -213,9 +191,7 @@
 .cabinet-redesign .cabinet-record-title > strong { font-size: 16px; font-weight: 400; cursor: default; overflow-wrap: anywhere; }
 .cabinet-redesign :is(.cabinet-search input,.pervik-input)::placeholder,.cabinet-dialog .pervik-input::placeholder { color: #62656a; opacity: 1; }
 @media(max-width:600px) { .cabinet-redesign .cabinet-record { flex-wrap: wrap; }.cabinet-redesign .cabinet-record-main { flex-basis: calc(100% - 50px); }.cabinet-redesign .cabinet-record > .cabinet-button { margin-left: 0; }.cabinet-redesign .cabinet-contacts > span { flex-wrap: wrap; } }
-.cabinet-redesign :is(.admin-task b,.cabinet-overview strong,.admin-running > strong,.cabinet-navigation b) { font-variant-numeric: tabular-nums; }
 .cabinet-redesign .cabinet-request-copy strong { overflow-wrap: anywhere; }
-@media(min-width:901px) { .cabinet-redesign .cabinet-sidebar { gap: 0; }.cabinet-redesign .cabinet-help-button { margin-bottom: 24px; } }
 .cabinet-sync-status { display: block; margin-top: 10px; color: #62656a; font-family: var(--font-text); font-size: 13px; line-height: 1.5; }
 .staff-profile-avatar{width:52px;height:52px;flex:0 0 52px;border-radius:14px;background:#f5ede9;display:grid;place-items:center;overflow:hidden;cursor:pointer}.staff-profile-avatar img{width:100%;height:100%;object-fit:cover}.staff-profile-photo{display:block;width:min(100%,384px);aspect-ratio:1;object-fit:cover;border-radius:16px;margin-inline:auto}.staff-profiles .cabinet-record-main{min-width:0;overflow-wrap:anywhere}.staff-profiles .cabinet-record-main>strong{font-size:16px;font-weight:400}.staff-profiles{margin-bottom:32px}
 

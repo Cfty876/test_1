@@ -13,6 +13,7 @@ import { registerServiceWorker } from './utils/registerServiceWorker.ts';
 import { SiteAccessGate } from './components/SiteAccessGate.tsx';
 import './council-workspace.css';
 import './maintenance.css';
+import './journey.css';
 
 createRoot(document.getElementById('root')!).render(<SiteAccessGate><MobileAppProvider><App /></MobileAppProvider></SiteAccessGate>);
 registerServiceWorker();

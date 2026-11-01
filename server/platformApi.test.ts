@@ -35,7 +35,7 @@ test(db ? 'PostgreSQL: complete platform workflows and concurrent decisions' : '
  let school='',curator='',schoolUser:any,curatorUser:any;
  let app:any,implementation:any,photo:any;
  const trackingCode=randomBytes(32).toString('hex');
- const form={submissionId:randomUUID(),trackingCode,name:'Тестов Тест Тестович',phone:'+7 (999) 123-45-67',email:'audit@example.invalid',category:'Есть своя инициатива',helpArea:'IT',description:'Школьная мастерская полезных цифровых проектов.',...privacy};
+ const form={submissionId:randomUUID(),trackingCode,name:'Тестов Тест Тестович',phone:'+7 (999) 123-45-67',email:'audit@example.invalid',category:'Есть своя инициатива',direction:'education',helpArea:'IT',description:'Школьная мастерская полезных цифровых проектов.',...privacy};
  try {
   await t.test('login requires acknowledgement, rejects wrong passwords and oversized input',async()=>{
    assert.equal((await req('auth/login',{login:env.AUTH_USERNAME,password},'')).status,400);
@@ -61,12 +61,14 @@ test(db ? 'PostgreSQL: complete platform workflows and concurrent decisions' : '
   await t.test('public validation, privacy, idempotent submission, private tracking and moderation',async()=>{
    assert.equal((await req('platform/applications',{...form,privacyAcknowledged:false},'')).status,400);
    assert.equal((await req('platform/applications',{...form,email:'invalid'},'')).status,400);
+   assert.equal((await req('platform/applications',{...form,direction:'IT'},'')).status,400);
+   assert.equal((await req('platform/applications',{...form,direction:undefined},'')).status,400);
    assert.equal((await req('platform/applications',{...form,phone:'123'},'')).status,400);
    const concurrent=await Promise.all([req('platform/applications',form,''),req('platform/applications',form,'')]);
    assert.equal(concurrent[0].status,201);assert.equal(concurrent[0].body.id,concurrent[1].body.id);app=concurrent[0].body;
    const tracked=await req('platform/application-track',{code:trackingCode},'');assert.equal(tracked.status,200);assert.equal(tracked.body.status,'pending');assert.equal('email' in tracked.body,false);
    assert.equal((await req('platform/applications/status',{id:app.id,status:'accepted',version:1},school)).status,403);
-   assert.equal((await req('platform/applications/status',{id:app.id,status:'accepted',version:1},curator)).status,200);
+   assert.equal((await req('platform/applications/status',{id:app.id,status:'accepted',version:1,direction:'culture'},curator)).status,200);
    const board=await req('platform/public-home',undefined,'');assert.ok(board.body.initiatives.some((i:any)=>i.id===app.id));assert.equal(JSON.stringify(board.body).includes('audit@example.invalid'),false);
    assert.equal((await req('platform/applications/status',{id:app.id,status:'rejected',version:2,reason:'Проверка запрета повторного решения'})).status,409);
    assert.equal((await req('platform/public-home',undefined,'',{'If-None-Match':board.etag!})).status,304);
@@ -74,20 +76,30 @@ test(db ? 'PostgreSQL: complete platform workflows and concurrent decisions' : '
   await t.test('revision requests, withdrawal, covers, featured cards and browser likes',async()=>{
    const code=randomBytes(32).toString('hex');const created=await req('platform/applications',{...form,submissionId:randomUUID(),trackingCode:code},'');assert.equal(created.status,201);
    assert.equal((await req('platform/applications/status',{id:created.body.id,status:'needs_changes',version:1,reason:'Добавьте место проведения и подробности.'})).status,200);
-   const revised=await req('platform/application-track',{code,action:'revise',version:2,description:'Дополненный план полезной школьной инициативы.'},'');assert.equal(revised.status,200);assert.equal(revised.body.status,'pending');
+   const revised=await req('platform/application-track',{code,action:'revise',version:2,direction:'culture',description:'Дополненный план полезной школьной инициативы.'},'');assert.equal(revised.status,200);assert.equal(revised.body.status,'pending');assert.equal(revised.body.direction,'culture');
    assert.equal((await req('platform/application-track',{code,action:'withdraw',version:2},'')).status,409);
    assert.equal((await req('platform/application-track',{code,action:'withdraw',version:3},'')).status,200);
    assert.equal((await req('platform/applications/status',{id:created.body.id,status:'accepted',version:4})).status,409);
    const initiative=(await req('platform/public-home',undefined,'')).body.initiatives.find((i:any)=>i.id===app.id);
-   assert.equal((await req('platform/initiative-cover',{id:app.id,coverId:'cleanup',version:initiative.coverVersion},school)).status,403);
-   assert.equal((await req('platform/initiative-cover',{id:app.id,coverId:'cleanup',version:initiative.coverVersion},curator)).status,200);
-   assert.equal((await req('platform/initiative-cover',{id:app.id,coverId:'cleanup',version:initiative.coverVersion},curator)).status,409);
+   assert.equal((await req('platform/initiative-cover',{id:app.id,coverId:'cleanup',direction:'sport',version:initiative.coverVersion},school)).status,403);
+   assert.equal((await req('platform/initiative-cover',{id:app.id,coverId:'cleanup',direction:'sport',version:initiative.coverVersion},curator)).status,200);
+   assert.equal((await req('platform/initiative-cover',{id:app.id,coverId:'cleanup',direction:'sport',version:initiative.coverVersion},curator)).status,409);
+   assert.equal((await req('platform/public-home',undefined,'')).body.initiatives.find((i:any)=>i.id===app.id).direction,'sport');
+   assert.equal((await req('platform/application-track',{code:trackingCode},'')).body.direction,'sport');
    const selected={featuredInitiatives:[{initiativeId:app.id,helpNeeded:'Помощь команды'}]};assert.equal((await req('platform/homepage',selected)).status,200);
    assert.equal((await req('platform/homepage',undefined,'')).body.featuredInitiatives[0].id,app.id);
    const liked=await req('platform/initiative-like',{initiativeId:app.id,liked:true},'');assert.equal(liked.status,200);
    assert.equal((await req('platform/initiative-like',{initiativeId:app.id,liked:true},liked.cookie)).body.count,1);
    assert.ok((await req('platform/public-home',undefined,liked.cookie)).body.likedIds.includes(app.id));
    assert.equal((await req('platform/initiative-like',{initiativeId:app.id,liked:false},liked.cookie)).body.count,0);
+  });
+  await t.test('all four project directions publish, while activist skills remain separate',async()=>{
+   for(const direction of ['education','culture','volunteering','sport']){
+    const r=await req('platform/applications',{...form,submissionId:randomUUID(),trackingCode:randomBytes(32).toString('hex'),direction},'');assert.equal(r.status,201);assert.equal(r.body.direction,direction);
+    assert.equal((await req('platform/applications/status',{id:r.body.id,version:1,status:'accepted'})).status,200);
+    assert.equal((await req('platform/public-home',undefined,'')).body.initiatives.find((i:any)=>i.id===r.body.id).direction,direction);
+   }
+   const person=await req('platform/applications',{...form,submissionId:randomUUID(),trackingCode:randomBytes(32).toString('hex'),category:'Хочу быть активистом',helpArea:'Медиа',helpAreas:['Медиа','IT']},'');assert.equal(person.status,201);assert.equal(person.body.direction,undefined);assert.deepEqual(person.body.helpAreas,['Медиа','IT']);
   });
   await t.test('profile validates contacts and optimistic version; authorized staff can view all profile data',async()=>{
    assert.equal((await req('platform/profile',{version:0,email:'wrong'},school)).status,400);

@@ -1,3 +1,4 @@
+import { directionLabel, directionCover, INITIATIVE_DIRECTIONS, type InitiativeDirection } from '../utils/initiativeDirections.ts';
 import { InitiativeCoverPicker } from './InitiativeCoverPicker.tsx';
 import { initiativeCover } from '../utils/initiativeCovers.ts';
 import { useMemo, useState } from 'react';
@@ -15,7 +16,7 @@ interface Props {
   initialOpenedId?: string;
   initialKind?: 'all' | 'initiative' | 'help';
   applications: ApplicationItem[]; processing: string[];
-  onReview: (id: string, status: Decision, reason: string, version?: number, coverId?: string) => Promise<void>;
+  onReview: (id: string, status: Decision, reason: string, version?: number, coverId?: string, direction?: InitiativeDirection) => Promise<void>;
   implementations: Implementation[]; initiatives: PublicInitiative[]; ownOnly?: boolean; allProjects?: boolean;
   implementationId?: string; onClearImplementation?: () => void;
 }
@@ -30,6 +31,7 @@ export function ApplicationInbox({ applications, processing, onReview, implement
   const [requestedPage, setRequestedPage] = useState(1); const [selectedId, setSelectedId] = useState(initialOpenedId);
   const [review, setReview] = useState<{ application: ApplicationItem; status: Decision } | null>(null);
   const [coverId, setCoverId] = useState('community');
+  const [direction, setDirection] = useState<InitiativeDirection | ''>('');
   const [reason, setReason] = useState(''); const [error, setError] = useState(''); const [saving, setSaving] = useState(false);
   const implementationById = useMemo(() => {
     const index = new Map<string, Pick<Implementation, 'organization' | 'status' | 'activistSlots' | 'volunteerSlots'>>();
@@ -48,7 +50,7 @@ export function ApplicationInbox({ applications, processing, onReview, implement
   }, [scopedApplications, filter, type, order, query, implementationById]);
   const page = Math.min(requestedPage, Math.max(1, Math.ceil(filtered.length / PAGE_SIZE)));
   function reset() { setQuery(''); setFilter('pending'); setType('all'); setRequestedPage(1); }
-  function open(application: ApplicationItem, status: Decision) { setSelectedId(''); setReview({ application, status }); setReason(''); setError(''); setCoverId(initiativeCover({ area: application.area || 'Мероприятия' }).id); }
+  function open(application: ApplicationItem, status: Decision) { setSelectedId(''); setReview({ application, status }); setReason(''); setError(''); setDirection(application.direction || ''); setCoverId(initiativeCover({ area: application.area || 'Мероприятия', coverId: directionCover(application.direction) }).id); }
   function initiativeTitle(application: ApplicationItem) { return initiatives.find(item => item.id === application.supportInitiativeId)?.title || implementations.find(item => item.id === application.supportImplementationId)?.initiativeTitle || application.supportInitiativeTitle; }
   function recruitment(application: ApplicationItem) {
     if (!application.supportImplementationId) return null;
@@ -61,7 +63,7 @@ export function ApplicationInbox({ applications, processing, onReview, implement
     if (!review || saving) return;
     if (reviewChanged) { setError('Заявка уже изменена другим сотрудником. Ваш комментарий сохранён. Закройте окно и откройте актуальную заявку.'); return; }
     setSaving(true); setError('');
-    try { await onReview(review.application.id, review.status, reason, review.application.version || 1, review.status === 'accepted' && review.application.isInitiative ? coverId : undefined); setReview(null); }
+    try { await onReview(review.application.id, review.status, reason, review.application.version || 1, review.status === 'accepted' && review.application.isInitiative ? coverId : undefined, review.status === 'accepted' && review.application.isInitiative && direction ? direction : undefined); setReview(null); }
     catch (failure) { setError(failure instanceof Error ? failure.message : 'Не удалось сохранить решение.'); }
     finally { setSaving(false); }
   }
@@ -88,7 +90,7 @@ export function ApplicationInbox({ applications, processing, onReview, implement
         return <article className="cabinet-request" key={application.id}>
           <button type="button" className="cabinet-request-toggle" aria-expanded={expanded} aria-controls={`request-details-${application.id}`} onClick={() => setExpandedId(expanded ? '' : application.id)}>
             <span className="idea-avatar" aria-hidden="true">{authorInitials(application.name)}</span>
-            <span className="cabinet-request-copy"><strong>{title}</strong><span>{application.name} · {application.helpAreas?.join(' · ') || application.area || application.helpArea || 'Мероприятия'}</span></span>
+            <span className="cabinet-request-copy"><strong>{title}</strong><span>{application.name} · {application.isInitiative ? directionLabel(application) : application.helpAreas?.join(' · ') || application.area || application.helpArea || 'Мероприятия'}</span></span>
             <span className={`journey-badge status-${application.status}`}>{APPLICATION_STATUS_LABELS[application.status]}</span>
             <ChevronDown size={18} className={expanded ? 'request-chevron is-expanded' : 'request-chevron'} aria-hidden="true" />
           </button>
@@ -104,10 +106,11 @@ export function ApplicationInbox({ applications, processing, onReview, implement
       }) : <CabinetEmpty title="Заявок не найдено" onReset={query || type !== 'all' || filter !== 'pending' ? reset : undefined}>{query || type !== 'all' ? 'Измените запрос или фильтры.' : 'Новые заявки появятся здесь после отправки участниками.'}</CabinetEmpty>}
       <CabinetPagination total={filtered.length} page={page} size={PAGE_SIZE} onChange={setRequestedPage} />
     </div>
-    {selected && <ModalDialog className="cabinet-dialog" labelledBy="application-detail-title" onClose={() => setSelectedId('')}><div className="workflow-dialog cabinet-detail"><div className="workflow-dialog-heading"><h2 id="application-detail-title">{selected.name}</h2><button type="button" aria-label="Закрыть" onClick={() => setSelectedId('')}><X size={20} /></button></div><span className={`journey-badge status-${selected.status}`}>{APPLICATION_STATUS_LABELS[selected.status]}</span><p className="cabinet-meta">{selected.category} · {selected.helpAreas?.join(' · ') || selected.area || selected.helpArea} · {dateLabel(selected.createdAt)}</p><p className="cabinet-detail-description">{selected.description}</p>{selected.supportInitiativeTitle && <p className="journey-notice">Отклик на «{initiativeTitle(selected)}»{selected.supportImplementationId && <> · {implementationById.get(selected.supportImplementationId)?.organization} · {selected.participationRole === 'activist' ? 'Активист' : 'Волонтёр'}</>}</p>}<CabinetContacts phone={selected.phone} email={selected.email} vkUrl={selected.vkUrl} />{decisions(selected)}{!!selected.history?.length && <div className="cabinet-history"><h3><Clock size={16} /> История заявки</h3><ol>{selected.history.map(event => <li key={event.id}><strong>{APPLICATION_STATUS_LABELS[event.status]}</strong><p>{event.message}</p><small>{new Date(event.at).toLocaleString('ru-RU')}{event.actorName ? ` · ${event.actorName}` : ''}</small></li>)}</ol></div>}</div></ModalDialog>}
+    {selected && <ModalDialog className="cabinet-dialog" labelledBy="application-detail-title" onClose={() => setSelectedId('')}><div className="workflow-dialog cabinet-detail"><div className="workflow-dialog-heading"><h2 id="application-detail-title">{selected.name}</h2><button type="button" aria-label="Закрыть" onClick={() => setSelectedId('')}><X size={20} /></button></div><span className={`journey-badge status-${selected.status}`}>{APPLICATION_STATUS_LABELS[selected.status]}</span><p className="cabinet-meta">{selected.category} · {selected.isInitiative ? directionLabel(selected) : selected.helpAreas?.join(' · ') || selected.area || selected.helpArea} · {dateLabel(selected.createdAt)}</p><p className="cabinet-detail-description">{selected.description}</p>{selected.supportInitiativeTitle && <p className="journey-notice">Отклик на «{initiativeTitle(selected)}»{selected.supportImplementationId && <> · {implementationById.get(selected.supportImplementationId)?.organization} · {selected.participationRole === 'activist' ? 'Активист' : 'Волонтёр'}</>}</p>}<CabinetContacts phone={selected.phone} email={selected.email} vkUrl={selected.vkUrl} />{decisions(selected)}{!!selected.history?.length && <div className="cabinet-history"><h3><Clock size={16} /> История заявки</h3><ol>{selected.history.map(event => <li key={event.id}><strong>{APPLICATION_STATUS_LABELS[event.status]}</strong><p>{event.message}</p><small>{new Date(event.at).toLocaleString('ru-RU')}{event.actorName ? ` · ${event.actorName}` : ''}</small></li>)}</ol></div>}</div></ModalDialog>}
     {review && applications.some(item => item.id === review.application.id) && <ModalDialog className="cabinet-dialog" onClose={() => setReview(null)} labelledBy="review-title" busy={saving}><form className="review-form" onSubmit={event => { event.preventDefault(); void submit(); }}><div className="workflow-dialog-heading"><h2 id="review-title">{review.status === 'accepted' ? review.application.isInitiative ? 'Опубликовать инициативу' : 'Принять участника' : review.status === 'needs_changes' ? 'Вернуть на доработку' : 'Объяснить решение'}</h2><button type="button" disabled={saving} aria-label="Закрыть" onClick={() => setReview(null)}><X size={20} /></button></div><p>{review.application.name} · {review.application.category}</p>
       {reviewChanged && <p className="journey-notice" role="status">Заявка уже изменилась в другом кабинете. Ваш комментарий сохранён; для решения откройте актуальную версию заявки.</p>}
       {review.status === 'accepted' && review.application.isInitiative && <div className="review-preview"><strong>После подтверждения идея появится на сайте</strong><p>{review.application.description}</p><small>Публикуются имя автора и описание. Контакты и история остаются в кабинете.</small></div>}
+      {review.status === 'accepted' && review.application.isInitiative && <label>Направление инициативы<select className="pervik-input" required disabled={saving} value={direction} onChange={event => { const value = event.target.value as InitiativeDirection; setDirection(value); setCoverId(directionCover(value) || coverId); }}><option value="">Выберите направление</option>{INITIATIVE_DIRECTIONS.map(item => <option key={item.id} value={item.id}>{item.label} · {item.description}</option>)}</select></label>}
       {review.status === 'accepted' && review.application.isInitiative && <InitiativeCoverPicker value={coverId} onChange={setCoverId} disabled={saving} />}
       {review.status === 'accepted' && !review.application.isInitiative && !reviewQuota && <p className="journey-notice">Участник появится в закрытой базе. Команда получит его контакты для связи. Анкета не будет опубликована в каталоге.</p>}
       {review.status === 'accepted' && reviewQuota && <p className="journey-notice">{reviewQuota.organization} · {review.application.participationRole === 'activist' ? 'Активист' : 'Волонтёр'} · Свободных мест: {reviewQuota.free}. Контакты будут доступны ответственному.</p>}

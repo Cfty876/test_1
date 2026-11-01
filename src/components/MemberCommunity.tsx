@@ -1,9 +1,8 @@
 import { FitText } from './FitText.tsx';
 import {useCallback,useEffect,useRef,useState} from 'react';
-import {CalendarDays,ChevronLeft,ChevronRight,Plus,Trophy,X} from 'lucide-react';
+import {ChevronLeft,ChevronRight,Plus,Trophy,X} from 'lucide-react';
 import type {UserSession} from '../utils/auth.ts';
-import type {Implementation} from '../utils/implementations.ts';
-import {MERIT_LABELS,type MeritKind,type MemberHubSnapshot,type MeritClaim,type CalendarItem,type MeritEntry,type MeritClaimView} from '../utils/memberHub.ts';
+import {MERIT_LABELS,type MeritKind,type MemberHubSnapshot,type CalendarItem,type MeritEntry,type MeritClaimView} from '../utils/memberHub.ts';
 import {platformRequest} from '../utils/platformApi.ts';
 import {useLiveRefresh} from '../utils/useLiveRefresh.ts';
 import {CabinetPagination} from './CabinetUI.tsx';
@@ -15,8 +14,8 @@ export function useMemberHub(){
  useEffect(()=>{const c=new AbortController();void refresh(c.signal).catch(()=>{});return()=>{c.abort();sequence.current++;};},[refresh]);
  const issue=useLiveRefresh(refresh,true);return {hub,refresh,error:error||issue};
 }
-export function CommunityPanel({section,user,implementations}:{section:'ranking'|'calendar';user:UserSession;implementations:Implementation[]}){
- const data=useMemberHub();return <>{data.error&&<p className="inline-error" role="alert">{data.error}</p>}{!data.hub?<p role="status">Загружаем данные…</p>:section==='ranking'?<MeritPanel hub={data.hub} refresh={data.refresh} user={user} implementations={implementations}/>:<CouncilCalendar hub={data.hub} refresh={data.refresh}/>}</>;
+export function CommunityPanel({section,user}:{section:'ranking'|'calendar';user:UserSession;}){
+ const data=useMemberHub();return <>{data.error&&<p className="inline-error" role="alert">{data.error}</p>}{!data.hub?<p role="status">Загружаем данные…</p>:section==='ranking'?<MeritPanel hub={data.hub} refresh={data.refresh} user={user}/>:<CouncilCalendar hub={data.hub} refresh={data.refresh}/>}</>;
 }
 export function CouncilCalendar({hub,refresh}:{hub:MemberHubSnapshot;refresh:()=>Promise<void>}){
  const [month,setMonth]=useState(()=>new Date(new Date().getFullYear(),new Date().getMonth(),1,12));const [day,setDay]=useState(()=>dateKey(new Date()));
@@ -31,7 +30,7 @@ export function CouncilCalendar({hub,refresh}:{hub:MemberHubSnapshot;refresh:()=
  {(creating||editing)&&hub.canEditCalendar&&<ModalDialog className="cabinet-dialog" labelledBy="event-edit-title" busy={busy} onClose={()=>{setCreating(false);setEditing(null);}}><form className="workflow-dialog" onSubmit={e=>{e.preventDefault();void save();}}><div className="workflow-dialog-heading"><h2 id="event-edit-title">{editing?'Изменить событие':'Новое событие'}</h2><button type="button" disabled={busy} aria-label="Закрыть" onClick={()=>{setCreating(false);setEditing(null);}}><X/></button></div><fieldset disabled={busy}><label>Название<input className="pervik-input" required minLength={3} maxLength={160} value={title} onChange={e=>setTitle(e.target.value)}/></label><div className="project-dates"><label>Начало<input className="pervik-input" required type="date" value={start} onChange={e=>{setStart(e.target.value);if(!end||end<e.target.value)setEnd(e.target.value);}}/></label><label>Окончание<input className="pervik-input" required type="date" min={start} value={end} onChange={e=>setEnd(e.target.value)}/></label></div><label>Где проводится<input className="pervik-input" required maxLength={200} value={location} onChange={e=>setLocation(e.target.value)}/></label><label>Что важно знать<textarea className="pervik-input" rows={4} maxLength={3000} value={description} onChange={e=>setDescription(e.target.value)}/></label>{editing&&<label className="member-check"><input type="checkbox" checked={cancel} onChange={e=>setCancel(e.target.checked)}/>Отменить это событие и убрать его из календаря</label>}{error&&<p className="inline-error" role="alert">{error}</p>}<button className="home-primary" type="submit">{busy?'Сохраняем…':cancel?'Подтвердить отмену':'Сохранить событие'}</button></fieldset></form></ModalDialog>}
  </section>;
 }
-export function MeritPanel({hub,refresh,user,implementations,schoolMode=false}:{schoolMode?:boolean;hub:MemberHubSnapshot;refresh:()=>Promise<void>;user:UserSession;implementations:Implementation[]}){
+export function MeritPanel({hub,refresh,user,schoolMode=false}:{schoolMode?:boolean;hub:MemberHubSnapshot;refresh:()=>Promise<void>;user:UserSession;}){
  const [query,setQuery]=useState('');const [rankingPage,setRankingPage]=useState(1);const [claimPage,setClaimPage]=useState(1);const [historyPage,setHistoryPage]=useState(1);const [claimFilter,setClaimFilter]=useState('pending');const [claiming,setClaiming]=useState(false);const [review,setReview]=useState<MeritClaimView|null>(null);const [reverse,setReverse]=useState<MeritEntry|null>(null);const [recipient,setRecipient]=useState(hub.myAccountId||hub.ranking[0]?.id||'');const [kind,setKind]=useState<MeritKind>('vk');const [project,setProject]=useState('');const [evidence,setEvidence]=useState('');const [description,setDescription]=useState('');const [decision,setDecision]=useState<'approved'|'rejected'>('approved');const [points,setPoints]=useState('');const [reason,setReason]=useState('');const [busy,setBusy]=useState(false);const [error,setError]=useState('');const [notice,setNotice]=useState('');
  const mine=hub.ranking.find(r=>r.mine);const rows=hub.ranking.filter(r=>`${r.name} ${r.school}`.toLocaleLowerCase('ru').includes(query.toLocaleLowerCase('ru')));const completed=hub.projects.filter(i=>i.scope===kind&&i.accountId===(hub.canScore?recipient:hub.myAccountId));
  async function act(route:string,body:unknown){if(busy)return;setBusy(true);setError('');try{await platformRequest(route,body);setClaiming(false);setReview(null);setReverse(null);setNotice('Изменения сохранены. Рейтинг обновится автоматически.');await refresh().catch(()=>{});}catch(e){setError(e instanceof Error?e.message:'Не удалось сохранить решение.');}finally{setBusy(false);}}

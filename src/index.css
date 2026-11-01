@@ -784,13 +784,6 @@ html { scrollbar-gutter: stable; }
 .cabinet-notifications li { border-top: 1px solid #edf0f3; padding: 12px 0; font-size: 12px; line-height: 1.7; }
 .cabinet-notifications time { color: #7c8490; font-size: 11px; }
 .cabinet-panel-anchor { scroll-margin-top: 90px; }
-.cabinet-navigation { display: flex; align-items: stretch; gap: 4px; border-bottom: 1px solid #dfe3e8; margin-bottom: 22px; min-width: 0; }
-.cabinet-navigation > button { position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 13px 12px; color: #68707c; font-size: 13px; line-height: 1.4; font-weight: 600; min-height: 48px; cursor: pointer; border-radius: 8px 8px 0 0; border-bottom: 2px solid transparent; transition: color .16s, background .16s, border-color .16s; }
-.cabinet-navigation > button:hover { color: #a8001c; background: #fff; }
-.cabinet-navigation > button[aria-current] { border-bottom-color: #e60023; color: #bd001e; background: #fff; }
-.cabinet-navigation svg { flex-shrink: 0; }
-.cabinet-navigation b { min-width: 21px; padding: 2px 5px; background: #ebedf1; color: #66707e; border-radius: 6px; font-size: 11px; font-variant-numeric: tabular-nums; }
-.cabinet-navigation [aria-current] b { color: #b6001c; background: #ffedf0; }
 .cabinet-panels { min-height: max(440px, calc(100dvh - 390px)); }
 .cabinet-panel[hidden] { display: none; }
 .cabinet-panel[data-active="true"] { animation: cabinet-panel-enter .2s ease-out; }
@@ -895,8 +888,6 @@ html { scrollbar-gutter: stable; }
 .platform-topbar .user-chip > div:last-child { min-width: 0; }
 .platform-topbar .user-chip span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 @media (max-width: 1000px) {
-  .cabinet-navigation { flex-wrap: wrap; gap: 3px; }
-  .cabinet-navigation > button { flex: 1 1 160px; }
   .cabinet-application-record { align-items: flex-start; flex-wrap: wrap; }
   .cabinet-application-record .cabinet-record-actions { max-width: none; width: 100%; justify-content: flex-start; }
 }
@@ -911,11 +902,6 @@ html { scrollbar-gutter: stable; }
   .cabinet-overview svg { width: 16px; height: 16px; }
   .cabinet-overview strong { font-size: 22px; }
   .cabinet-overview span { font-size: 10px; }
-  .cabinet-navigation { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 4px; border-bottom: 0; margin-bottom: 20px; }
-  .cabinet-navigation > button { justify-content: flex-start; border: 1px solid #e0e4e9; border-radius: 8px; padding: 10px; min-height: 46px; background: #fff; font-size: 11px; gap: 6px; }
-  .cabinet-navigation > button[aria-current] { border-color: #ed9bac; background: #fff5f7; }
-  .cabinet-navigation > button b { margin-left: auto; }
-  .cabinet-navigation > button:only-child { grid-column: 1 / -1; }
   .cabinet-section-heading { align-items: flex-start; flex-wrap: wrap; }
   .cabinet-section-heading h2, .platform-dashboard .implementation-heading h2, .platform-dashboard .editor-heading h2 { font-size: 20px; }
   .cabinet-segments > button { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 7px; padding: 8px; font-size: 11px; }

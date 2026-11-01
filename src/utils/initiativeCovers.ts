@@ -1,3 +1,4 @@
+import { directionCover } from './initiativeDirections.ts';
 import type { HelpArea } from './auth.ts';
 
 interface CoverTheme { id: string; label: string; area: HelpArea }
@@ -40,8 +41,8 @@ export function isInitiativeCoverId(value: unknown): value is string {
   return typeof value === 'string' && INITIATIVE_COVERS.some(cover => cover.id === value);
 }
 /** Text changes never affect the cover. Editors explicitly choose from the library. */
-export function initiativeCover(initiative: { area: string; coverId?: string }) {
+export function initiativeCover(initiative: { area: string; coverId?: string; direction?: string }) {
   const theme = INITIATIVE_COVERS.find(item => item.id === initiative.coverId)
-    || INITIATIVE_COVERS.find(item => item.id === ((DEFAULTS as Record<string, string>)[initiative.area] || 'community'))!;
+    || INITIATIVE_COVERS.find(item => item.id === (directionCover(initiative.direction) || (DEFAULTS as Record<string, string>)[initiative.area] || 'community'))!;
   return { id: theme.id, label: theme.label, src: `/illustrations/initiatives/${theme.id}.svg` };
 }

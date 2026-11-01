@@ -1,4 +1,6 @@
-import { InstallAppCard } from './InstallApp.tsx';
+import type { InitiativeDirection } from '../utils/initiativeDirections.ts';
+import { COUNCIL_NAME } from '../utils/brand.ts';
+import { INITIATIVE_DIRECTIONS } from '../utils/initiativeDirections.ts';
 import React from 'react';
 import { ArrowRight, ArrowUpRight, Globe2, Mail, Phone } from 'lucide-react';
 import type { HelpArea } from './ApplicationFormView.tsx';
@@ -11,6 +13,7 @@ interface HomeViewProps {
   onOpenInitiative: (initiative: PublicInitiative) => void;
   onCatalog: () => void;
   onActivist: () => void;
+  onDirection: (direction: InitiativeDirection) => void;
   onGoToForm: (area?: HelpArea, initiative?: PublicInitiative, implementation?: PublicImplementation) => void;
   likedIds: string[];
   likingId: string | null;
@@ -21,14 +24,8 @@ interface HomeViewProps {
   onTrack: () => void;
 }
 
-const areas = [
-  { number: '01', title: 'События', area: 'Мероприятия' as const, description: 'Организация мероприятий', color: 'clay' },
-  { number: '02', title: 'Медиа', area: 'Медиа' as const, description: 'Фото, видео и тексты', color: 'sage' },
-  { number: '03', title: 'Технологии', area: 'IT' as const, description: 'Разработка и дизайн', color: 'blue' },
-  { number: '04', title: 'Волонтёрство', area: 'Волонтёрство' as const, description: 'Помощь на проектах', color: 'yellow' },
-];
 
-export const HomeView: React.FC<HomeViewProps> = ({ onOpenInitiative, onCatalog, onActivist, onGoToForm, onOpenLogin, featuredInitiatives, featuredLoadError, onTrack, likedIds, likingId, onLike }) => {
+export const HomeView: React.FC<HomeViewProps> = ({ onDirection, onOpenInitiative, onCatalog, onActivist, onGoToForm, onOpenLogin, featuredInitiatives, featuredLoadError, onTrack, likedIds, likingId, onLike }) => {
   return <div className="platform-home">
     <main className="platform-home-main">
       <section className="home-hero" aria-labelledby="home-title">
@@ -36,7 +33,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onOpenInitiative, onCatalog,
           <h1 id="home-title">
             <span className="home-title-line">Начни</span>
             <span className="home-title-line">перемены</span>
-            <span className="home-title-line home-title-accent">в своём городе.</span>
+            <span className="home-title-line home-title-accent">в своём городе</span>
           </h1>
           <p className="home-lede">
             <span className="desktop-copy">Предлагай инициативы или стань активистом: вместе меняем Екатеринбург.</span><span className="mobile-copy">Твоя идея. Твоя помощь. Наш город.</span>
@@ -50,23 +47,22 @@ export const HomeView: React.FC<HomeViewProps> = ({ onOpenInitiative, onCatalog,
         <div className="home-art" role="img" aria-label="Участники Движения Первых" />
       </section>
 
-      <InstallAppCard />
-      <HowItWorks onStart={() => onGoToForm()} onActivist={onActivist} />
+      <HowItWorks onStart={() => onGoToForm()} />
       <div className="home-track-link"><span>Уже отправил заявку?</span><button type="button" onClick={onTrack}><span className="desktop-copy">Проверить статус и ответ команды</span><span className="mobile-copy">Проверить статус</span> <ArrowUpRight size={16} /></button></div>
       <HelpWanted initiatives={featuredInitiatives} loadError={featuredLoadError} onDetails={onOpenInitiative} onLike={onLike} likedIds={likedIds} likingId={likingId} onCatalog={onCatalog} />
 
       <section id="directions" tabIndex={-1} className="areas-section home-nav-target" aria-labelledby="areas-heading">
         <div className="areas-heading-row">
           <div>
-            <h2 id="areas-heading">Найди своё направление</h2><p>Выбери, чем хочешь помогать. Можно отметить несколько направлений в анкете активиста.</p>
+            <h2 id="areas-heading">Направления инициатив</h2><p>Выбери тему проекта. В анкете активиста отдельно укажи, чем готов помогать.</p>
           </div>
         </div>
         <div className="area-grid">
-          {areas.map((area) => (
-            <button type="button" key={area.number} onClick={() => onGoToForm(area.area)} className={`area-card area-${area.color}`}>
-              <span className="area-number">{area.number}</span>
+          {INITIATIVE_DIRECTIONS.map((area, index) => (
+            <button type="button" key={area.id} onClick={() => onDirection(area.id)} className="area-card">
+              <span className="area-number">{String(index + 1).padStart(2, '0')}</span>
               <span className="area-arrow"><ArrowUpRight size={17} /></span>
-              <span className="area-title">{area.title}</span>
+              <span className="area-title">{area.label}</span>
               <span className="area-description">{area.description}</span>
             </button>
           ))}
@@ -86,11 +82,11 @@ export const HomeView: React.FC<HomeViewProps> = ({ onOpenInitiative, onCatalog,
             <div className="footer-brandline">
               <img src="/brand/movement-logo.svg" alt="" className="footer-logo" />
               <div>
-                <strong>Совет Первых Екатеринбурга</strong>
+                <strong>{COUNCIL_NAME}</strong>
                 <span>Движение Первых · Свердловская область</span>
               </div>
             </div>
-            <p>Инициативы и активисты Совета Первых Екатеринбурга.</p>
+            <p>Инициативы и активисты Совета Первых местного отделения города Екатеринбург.</p>
             <a className="footer-official-link" href="https://будьвдвижении.рф" target="_blank" rel="noreferrer">
               <Globe2 size={16} /> Официальный сайт Движения Первых <ArrowUpRight size={14} />
             </a>
@@ -121,7 +117,7 @@ export const HomeView: React.FC<HomeViewProps> = ({ onOpenInitiative, onCatalog,
 
         <div className="footer-bottom">
           <a href="/documents/2026-11-01/index.html" target="_blank" rel="noopener noreferrer">Документы · тестовая редакция</a>
-          <span>Движение Первых · Совет Екатеринбурга</span>
+          <span>{COUNCIL_NAME}</span>
           <span><a href="https://xn--90acagbhgpca7c8c7f.xn--p1ai/regional-offices/regionalnoe-otdelenie-sverdlovskoy-oblasti_41/" target="_blank" rel="noreferrer">Об отделении</a></span>
           <button type="button" onClick={onOpenLogin}>Для команды <ArrowUpRight size={14} /></button>
           <button type="button" onClick={onTrack}>Моя заявка <ArrowUpRight size={14} /></button>

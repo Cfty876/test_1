@@ -1,15 +1,22 @@
-import { ArrowUpRight, HeartHandshake } from 'lucide-react';
+import { ArrowUpRight, ArrowRight, Lightbulb, Send, Users, HeartHandshake } from 'lucide-react';
 import type { FeaturedInitiative } from '../utils/homepage.ts';
 import type { PublicInitiative } from '../utils/publicInitiatives.ts';
 import { InitiativeCard } from './InitiativeCard.tsx';
 
-export function HowItWorks({ onStart, onActivist }: { onStart: () => void; onActivist: () => void }) {
-  return <section id="how-to-join" tabIndex={-1} className="how-section home-nav-target" aria-labelledby="how-title">
-    <div className="home-section-heading"><h2 id="how-title">Два способа быть в движении</h2></div>
-    <div className="participation-paths">
-      <article className="participation-path"><h3>Есть идея?</h3><p>Предложи свой проект для города.</p><a href="/?view=form&kind=initiative" onClick={event => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); onStart(); }}>Предложить инициативу <ArrowUpRight size={20} /></a></article>
-      <article className="participation-path"><h3>Хочешь помогать?</h3><p>Выбери направление и стань активистом.</p><a href="/?view=form&kind=activist" onClick={event => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); onActivist(); }}>Стать активистом <ArrowUpRight size={20} /></a></article>
-    </div>
+const IDEA_STEPS = [
+  { title: 'Предложи идею', text: 'Заполни короткую анкету и расскажи, что хочешь изменить.', icon: Lightbulb },
+  { title: 'Получи ответ', text: 'Команда рассмотрит заявку. Одобренная идея появится в каталоге.', icon: Send },
+  { title: 'Найди команду', text: 'Пригласи единомышленников. Участники смогут откликнуться на проект.', icon: Users },
+  { title: 'Действуй вместе', text: 'Согласуйте план и даты, распределите задачи и воплотите идею.', icon: HeartHandshake },
+];
+export function HowItWorks({ onStart }: { onStart: () => void }) {
+  return <section id="how-to-join" tabIndex={-1} className="how-section idea-process home-nav-target" aria-labelledby="how-title">
+    <div className="home-section-heading"><div><p className="process-eyebrow">От первого шага до общего дела</p><h2 id="how-title">Как идея становится делом</h2></div></div>
+    <ol className="idea-process-steps">{IDEA_STEPS.map((step, index) => <li key={step.title}>
+      <div className="idea-process-index"><span>{String(index + 1).padStart(2, '0')}</span><step.icon size={22} strokeWidth={1.5} aria-hidden="true" /></div>
+      <h3>{step.title}</h3><p>{step.text}</p>
+    </li>)}</ol>
+    <a className="idea-process-start" href="/?view=form&kind=initiative" onClick={event => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); onStart(); }}>Сделать первый шаг <ArrowRight size={18} aria-hidden="true" /></a>
   </section>;
 }
 

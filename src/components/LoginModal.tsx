@@ -41,7 +41,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
-  showToast,
 }) => {
   const [login, setLogin] = useState(getSavedLogin);
   const [password, setPassword] = useState('');
@@ -135,13 +134,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         </button>
 
         <div className="login-brand">
-          <img src="/brand/ekb-council-logo.svg" alt="Логотип Совета Первых Екатеринбурга" />
+          <img src="/brand/ekb-council-logo.svg" alt="Логотип Совета Первых местного отделения города Екатеринбург" />
         </div>
 
         <main className="login-main">
           <div className="login-card modal-animate">
             <h1 id="login-modal-title">Вход в кабинет</h1>
-            <p className="login-card-caption">Вход для команды Совета Первых</p>
+            <p className="login-card-caption">Вход для команды Совета Первых местного отделения города Екатеринбург</p>
 
             <form ref={formRef} onSubmit={handleSubmit} className="login-form" autoComplete="on" name="platform-login">
           <div>

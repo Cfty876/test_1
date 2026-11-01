@@ -1,5 +1,4 @@
 import { CouncilNavigation } from './CouncilNavigation.tsx';
-import { FitText } from './FitText.tsx';
 import '../school.css';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowDownLeft, ArrowRight, CalendarDays, Check, ChevronRight, CircleHelp, Flag, Home, Lightbulb, Radio, Trophy, Users, X } from 'lucide-react';
@@ -76,7 +75,7 @@ export function SchoolMemberPortal(props: DashboardViewProps) {
     <div className="school-layout">
       <CouncilNavigation items={NAV.map(item => ({ ...item }))} active={tab} onSelect={id => select(id as Tab)} tone="school" onHelp={() => setHelpOpen(true)} />
       <div className="school-main">
-        <div className="school-context"><span><Flag size={16} aria-hidden="true" />Школьный Совет Первых</span><span className={`school-live${liveIssue ? ' is-offline' : ''}`}><Radio size={14} aria-hidden="true" />{liveIssue ? 'Нет связи' : 'На связи'}</span></div>
+        <div className="school-context"><span><Flag size={16} aria-hidden="true" />Твоё отделение</span><span className={`school-live${liveIssue ? ' is-offline' : ''}`}><Radio size={14} aria-hidden="true" />{liveIssue ? 'Нет связи' : 'На связи'}</span></div>
         <header className="school-page-header"><div><h1 tabIndex={-1} ref={mainTitle}>{PAGE_COPY[tab].title}</h1><p>{PAGE_COPY[tab].description}</p></div><button type="button" className="school-help-icon" aria-label="Как работать в кабинете" onClick={() => setHelpOpen(true)}><CircleHelp size={23} /></button></header>
         {liveIssue && <p className="school-connection" role="alert">{liveIssue} Последние данные сохранены на экране. Повторяем подключение.</p>}
         {tab === 'home' && <>
@@ -93,9 +92,9 @@ export function SchoolMemberPortal(props: DashboardViewProps) {
         </>}
         {tab === 'base' && <SchoolDirectory key={directorySection} initialSection={directorySection} members={props.baseMembers} initiatives={props.publishedInitiatives} onTakeIdea={takeIdea} onCopy={copy} loading={props.publicLoading} loadError={props.publicLoadError} onRetry={props.onRetryPublicLoad} />}
         {tab === 'projects' && <><div className="school-project-intro"><Lightbulb size={23} aria-hidden="true" /><p>Выбери идею → укажи даты → дождись согласования → проведи и отправь отчёт.</p><button type="button" onClick={() => openDirectory('ideas')}>Каталог идей<ArrowRight size={17} /></button></div><ImplementationBoard memberMode key={proposal?.key ?? 'projects'} initialInitiativeId={proposal?.initiativeId} user={user} initiatives={props.publishedInitiatives} implementations={projects} applications={props.applications} photos={props.implementationPhotos} participants={props.implementationParticipants} notifications={props.notifications} onOpenResponses={() => {}} onRefresh={async () => { await props.onRefreshDashboard(); await refresh(); }} /></>}
-        {tab === 'ranking' && (hub ? <MeritPanel schoolMode hub={hub} user={user} implementations={projects} refresh={refresh} /> : <p className="school-loading" role="status">Загружаем твои баллы и рейтинг…</p>)}
+        {tab === 'ranking' && (hub ? <MeritPanel schoolMode hub={hub} user={user} refresh={refresh} /> : <p className="school-loading" role="status">Загружаем твои баллы и рейтинг…</p>)}
         {tab === 'calendar' && (hub ? <CouncilCalendar hub={hub} refresh={refresh} /> : <p className="school-loading" role="status">Загружаем календарь…</p>)}
-        <footer className="school-page-footer"><span>Первик · Совет Первых Екатеринбурга</span><button type="button" onClick={() => setHelpOpen(true)}>Нужна подсказка?<CircleHelp size={16} /></button></footer>
+        <footer className="school-page-footer"><span>Первик · Совет Первых местного отделения города Екатеринбург</span><button type="button" onClick={() => setHelpOpen(true)}>Нужна подсказка?<CircleHelp size={16} /></button></footer>
       </div>
     </div>
 

@@ -18,7 +18,7 @@ export function MaintenanceControl() {
   const [notice, setNotice] = useState('');
   const load = useCallback(async (signal?: AbortSignal) => { const value = await platformRequest<Settings>('/maintenance', undefined, signal); if (!signal?.aborted) setSettings(previous => previous && previous.version > value.version ? previous : value); }, []);
   useEffect(() => { const controller = new AbortController(); void load(controller.signal).catch(() => { if (!controller.signal.aborted) setError('Не удалось проверить состояние сайта.'); }); return () => controller.abort(); }, [load]);
-  useLiveRefresh(load, true);
+  useLiveRefresh(load, open);
   function show() { setError(''); setNotice(''); setMessage(settings?.message || DEFAULT_MAINTENANCE.message); setEditingVersion(settings?.version || 0); setConfirm(false); setAcknowledged(false); setOpen(true); }
   async function save(enabled: boolean) {
     if (!settings || busy || (enabled !== settings.enabled && enabled && !acknowledged)) return;
